@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cloud = ["google-cloud-secret-manager>=2,<3", "google-cloud-tasks>=2,<3", "google-cloud-storage>=3,<4", "google-auth>=2,<3"]
+cloud = ["google-cloud-secret-manager>=2,<3", "google-cloud-tasks>=2,<3", "google-cloud-storage>=3,<4", "google-auth>=2,<3", "google-cloud-logging>=3.12,<4"]
 browser = ["playwright>=1.50,<2"]
 
 [dependency-groups]

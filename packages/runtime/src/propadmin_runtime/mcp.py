@@ -15,6 +15,7 @@ from pydantic import Field
 from . import routes_agent, routes_browser, routes_email, routes_voice, tools_ledger
 from .auth import issue_token, require_admin, require_internal, require_session
 from .models import Input
+from .observability import current_ids
 
 router = APIRouter()
 VERSIONS = ("2026-07-28", "2025-11-25")
@@ -320,8 +321,11 @@ def execute(request, name, args, session_id):
 
 def audit(request, session_id, name, args, status, error_code=None):
     """Store metadata only; bearer tokens, tool payloads and documents are never logged here."""
+    span_id = current_ids().get("span_id")
     if isinstance(name, str) and name in SELF_LOGGED:
-        return
+        actions = request.app.state.store.snapshot()["actions"].values()
+        if span_id and any(a.get("span_id") == span_id for a in actions):
+            return
 
     def save(state):
         key = identifier("action")
@@ -336,6 +340,7 @@ def audit(request, session_id, name, args, status, error_code=None):
             "status": status,
             "error_code": error_code,
             "created_at": now(),
+            "span_id": span_id,
             "reversible": False,
         }
         publish(state, "action.created", {"id": key})
@@ -448,6 +453,24 @@ async def mcp(request: Request, session_id=Depends(require_session)):
     if method != "tools/call":
         return rpc_error(request_id, -32601, "Method not found", 404)
     name, args = params.get("name"), params.get("arguments", {})
+    run = request.app.state.store.snapshot()["runs"].get(session_id, {"id": session_id})
+    telemetry = request.app.state.telemetry
+    tool_name = name if isinstance(name, str) and name in CATALOGUE else "unknown"
+    with telemetry.for_run(
+        run, f"execute_tool {tool_name}", {"name": name, "arguments": args, "request_id": request_id,
+                                         "request_trace_id": current_ids().get("trace_id")},
+        attributes={"gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": tool_name},
+    ) as outcome:
+        response = call_tool(request, session_id, request_id, name, args)
+        body = json.loads(response.body)
+        result_body = body.get("result", {})
+        outcome["result"] = result_body.get("structuredContent", body)
+        if body.get("error") or result_body.get("isError"):
+            outcome["error"] = body.get("error") or outcome["result"].get("error")
+        return response
+
+
+def call_tool(request, session_id, request_id, name, args):
     if not isinstance(name, str) or name not in CATALOGUE or not isinstance(args, dict):
         audit(
             request, session_id, name, args if isinstance(args, dict) else {}, "failed", "invalid"
@@ -474,7 +497,10 @@ async def mcp(request: Request, session_id=Depends(require_session)):
                 "isError": True,
             },
         )
-    except Exception:
+    except Exception as exc:
+        request.app.state.telemetry.emit(
+            "tool.exception", {"type": type(exc).__name__, "message": str(exc)}, severity="ERROR"
+        )
         audit(request, session_id, name, args, "failed", "internal")
         payload = {"error": {"code": "internal", "message": "Graph tool failed unexpectedly"}}
         return result(request_id, {

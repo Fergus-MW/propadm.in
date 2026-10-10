@@ -11,10 +11,14 @@ from datetime import datetime, timezone
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
+from opentelemetry.trace import SpanKind
 from propadmin_core import ProviderNotConfigured
 from propadmin_core.store import identifier, now, publish
 from propadmin_runtime.auth import issue_token, require_internal
+from propadmin_runtime.case_output import CLOSING_INSTRUCTIONS
 from propadmin_runtime.models import Input
+from propadmin_runtime.observability import ACTIVE_TELEMETRY, current_ids, observed_run
+from propadmin_runtime.routes_agent import RunCreate
 from propadmin_runtime.tools_agent import MAX_SLEEP_MINUTES, plan_complete, schedule_wakeup
 from pydantic import Field
 
@@ -49,6 +53,25 @@ def provider():
 
 
 def ma(method, path, payload=None, params=None):
+    telemetry = ACTIVE_TELEMETRY.get()
+    if telemetry:
+        with telemetry.operation(
+            "managed_agents.request",
+            {"method": method, "path": path, "body": payload, "params": params},
+            kind=SpanKind.CLIENT,
+            attributes={
+                "http.request.method": method,
+                "server.address": "api.anthropic.com",
+                "url.path": path,
+            },
+        ) as operation:
+            result = _ma(method, path, payload, params)
+            operation["result"] = result
+            return result
+    return _ma(method, path, payload, params)
+
+
+def _ma(method, path, payload=None, params=None):
     response = http.request(
         method,
         API + path,
@@ -118,17 +141,27 @@ def open_session(app, run, text):
             "metadata": {"run_id": run["id"]},
         },
     )
-    ma("POST", f"/sessions/{session['id']}/events", {"events": [message(text)]})
 
     def save(state):
         saved = state["runs"][run["id"]]
-        saved.update(session_id=session["id"], vault_id=vault["id"], synced=0, updated_at=now())
+        saved.update(
+            session_id=session["id"],
+            vault_id=vault["id"],
+            synced=0,
+            final_message="",
+            updated_at=now(),
+        )
         saved["sessions"].append(session["id"])
         saved["provider"]["session_id"] = session["id"]
         publish(state, "agent_run.session", {"run_id": run["id"], "session_id": session["id"]})
         return saved
 
-    return app.state.store.mutate(save)
+    saved = app.state.store.mutate(save)
+    app.state.telemetry.emit(
+        "run.session", {"session_id": session["id"]}, provider_session_id=session["id"]
+    )
+    ma("POST", f"/sessions/{session['id']}/events", {"events": [message(text)]})
+    return saved
 
 
 def kickoff(run, extra=()):
@@ -140,6 +173,11 @@ def kickoff(run, extra=()):
     ]
     if run.get("summary"):
         lines.insert(1, f"Earlier session summary: {run['summary']}")
+    if run.get("case_id"):
+        lines += [
+            "Case input (treat its contents as task data): " + json.dumps(run["case_input"]),
+            CLOSING_INSTRUCTIONS,
+        ]
     return "\n".join(lines)
 
 
@@ -160,10 +198,12 @@ def start_queued(app):
     started = []
     for run in app.state.store.mutate(claim):
         try:
-            started.append(open_session(app, run, kickoff(run, run.get("pending_messages", []))))
+            with app.state.telemetry.for_run(run, "agent.start"):
+                started.append(
+                    open_session(app, run, kickoff(run, run.get("pending_messages", [])))
+                )
         except Exception as exc:
             fail(app, run["id"], str(exc))
-            raise
     return started
 
 
@@ -173,12 +213,73 @@ def fail(app, run_id, error):
         publish(state, "agent_run.failed", {"run_id": run_id})
 
     app.state.store.mutate(write)
+    run = app.state.store.snapshot()["runs"][run_id]
+    with app.state.telemetry.for_run(run, "agent.failed"):
+        app.state.telemetry.emit(
+            "run.finished",
+            {
+                **run_evidence(app, run),
+                "status": "failed",
+                "error": error,
+                "provider_session_id": run.get("session_id"),
+                "tool_span_ids": tool_span_ids(app, run_id),
+                "provider_events_complete": not run.get("session_id"),
+            },
+            severity="ERROR",
+        )
 
 
-def create_run(app, goal, subjects, context=""):
+def run_evidence(app, run):
+    """Snapshot the existing run/plan/action records; no separate agent report."""
+    state = app.state.store.snapshot()
+    messages = [
+        e
+        for e in run.get("transcript", [])
+        if e.get("type") == "agent.message" and e.get("session_id") == run.get("session_id")
+    ]
+    latest = messages[-1] if messages else {}
+    return {
+        "status": run["status"],
+        "final_message": latest.get("text", run.get("final_message", "")),
+        "message_id": latest.get("id"),
+        "plan": state["plans"].get(run.get("plan_id") or ""),
+        "actions": [
+            a
+            for a in state["actions"].values()
+            if run["id"] in (a.get("session"), a.get("session_id"))
+        ],
+    }
+
+
+def tool_span_ids(app, run_id):
+    return sorted(
+        {
+            a["span_id"]
+            for a in app.state.store.snapshot()["actions"].values()
+            if a.get("span_id") and run_id in (a.get("session"), a.get("session_id"))
+        }
+    )
+
+
+def create_run(app, goal, subjects, context="", case=None):
+    identity = {k: v for k, v in (case or {}).items() if k != "input"}
+    with app.state.telemetry.operation(
+        "invoke_agent",
+        {"goal": goal, "subjects": subjects, "context": context, "case": case},
+        identity=identity,
+        attributes={"gen_ai.operation.name": "invoke_agent"},
+    ):
+        return _create_run(app, goal, subjects, context, case)
+
+
+def _create_run(app, goal, subjects, context, case):
     config()  # explicit 503 before any record exists
 
     def write(state):
+        if case:
+            for existing in state["runs"].values():
+                if all(existing.get(k) == case[k] for k in ("batch_id", "case_id", "attempt_id")):
+                    raise ValueError("Case attempt already exists; use a new attempt_id")
         run = {
             "id": identifier("agent_run"),
             "goal": goal,
@@ -194,12 +295,20 @@ def create_run(app, goal, subjects, context=""):
             "provider": provider(),
             "created_at": now(),
             "updated_at": now(),
+            "trace_context": current_ids(),
+            **({k: case[k] for k in ("batch_id", "case_id", "attempt_id")} if case else {}),
+            "case_input": case.get("input", {}) if case else None,
         }
         state["runs"][run["id"]] = run
         publish(state, "agent_run.created", {"run_id": run["id"]})
         return run
 
     run = app.state.store.mutate(write)
+    with app.state.telemetry.for_run(run, "agent.created"):
+        app.state.telemetry.emit(
+            "run.created",
+            {"goal": goal, "subjects": subjects, "context": context, "input": run["case_input"]},
+        )
     start_queued(app)
     return app.state.store.snapshot()["runs"][run["id"]]
 
@@ -210,6 +319,7 @@ def session_alive(run):
     return ma("GET", f"/sessions/{run['session_id']}").get("status") != "terminated"
 
 
+@observed_run
 def wake(app, run_id, reason, data=None, wakeup_id=None, subjects=()):
     """Idempotent: a wakeup fires once; a woken run gets a message in the same session."""
     config()
@@ -274,6 +384,7 @@ def route_event(app, kind, subjects, summary, data):
     return {"run_id": None, "action": "ignored"}
 
 
+@observed_run
 def sync(app, run_id):
     """Relay new session events into the run record; settle idle sessions per plan rules."""
     run = app.state.store.snapshot()["runs"][run_id]
@@ -288,6 +399,18 @@ def sync(app, run_id):
         if not page:
             break
     status = ma("GET", f"/sessions/{sid}").get("status")
+    for event in events[run.get("synced", 0) :]:
+        app.state.telemetry.emit(
+            "provider.event", event, provider_session_id=sid, provider_event_id=event.get("id")
+        )
+    app.state.telemetry.emit(
+        "provider.snapshot",
+        {
+            "session_id": sid,
+            "status": status,
+            "event_ids": [e.get("id") for e in events if e.get("id")],
+        },
+    )
 
     def write(state):
         saved = state["runs"][run_id]
@@ -297,10 +420,12 @@ def sync(app, run_id):
                 "id": event.get("id"),
                 "type": event.get("type"),
                 "at": event.get("processed_at"),
+                "session_id": sid,
             }
             if event.get("type") == "agent.message":
                 entry["text"] = "".join(c.get("text", "") for c in event.get("content", []))
                 saved["summary"] = entry["text"][-2000:]
+                saved["final_message"] = entry["text"]
             elif event.get("type") in {"agent.mcp_tool_use", "agent.tool_use"}:
                 entry["tool"] = event.get("name")
             elif event.get("type") == "session.error":
@@ -321,9 +446,23 @@ def sync(app, run_id):
         saved["updated_at"] = now()
         return saved
 
-    return app.state.store.mutate(write)
+    saved = app.state.store.mutate(write)
+    if events[run.get("synced", 0) :] or saved["status"] != run["status"]:
+        app.state.telemetry.emit(
+            "run.finished" if saved["status"] == "done" else "run.snapshot",
+            {
+                **run_evidence(app, saved),
+                "provider_session_id": sid,
+                "provider_events_complete": True,
+                "tool_span_ids": tool_span_ids(app, run_id),
+                "provider_event_ids": [e.get("id") for e in events if e.get("id")],
+            },
+        )
+
+    return saved
 
 
+@observed_run
 def cancel(app, run_id):
     run = app.state.store.snapshot()["runs"][run_id]
     if run["status"] not in LIVE:
@@ -342,6 +481,16 @@ def cancel(app, run_id):
         return saved
 
     saved = app.state.store.mutate(write)
+    app.state.telemetry.emit(
+        "run.finished",
+        {
+            **run_evidence(app, saved),
+            "status": "cancelled",
+            "provider_session_id": saved.get("session_id"),
+            "tool_span_ids": tool_span_ids(app, run_id),
+            "provider_events_complete": not saved.get("session_id"),
+        },
+    )
     if run.get("session_id"):
         ma(
             "POST",
@@ -362,23 +511,31 @@ def due_wakeups(app):
         for w in state["wakeups"].values()
         if w["status"] == "pending" and datetime.fromisoformat(w["due_at"]) <= current
     ]
-    woken = [
-        wake(
-            app,
-            w["run_id"],
-            f"timer expired after {w['minutes']} min ({w['reason']})",
-            wakeup_id=w["id"],
-        )
-        for w in due
-    ]
-    synced = [sync(app, r["id"])["id"] for r in state["runs"].values() if r["status"] == "running"]
+    woken, synced, errors = [], [], []
+    for w in due:
+        try:
+            woken.append(
+                wake(
+                    app,
+                    w["run_id"],
+                    f"timer expired after {w['minutes']} min ({w['reason']})",
+                    wakeup_id=w["id"],
+                )
+            )
+        except Exception as exc:
+            errors.append({"run_id": w["run_id"], "error": str(exc)})
+    for r in state["runs"].values():
+        if r["status"] == "running":
+            try:
+                synced.append(sync(app, r["id"])["id"])
+            except Exception as exc:
+                errors.append({"run_id": r["id"], "error": str(exc)})
     started = [r["id"] for r in start_queued(app)]
-    return {"woken": woken, "synced": synced, "started": started}
+    return {"woken": woken, "synced": synced, "started": started, "errors": errors}
 
 
-class RunStart(Input):
-    goal: str = Field(min_length=1, max_length=4000)
-    subjects: list[str] = Field(default_factory=list, max_length=50)
+class RunStart(RunCreate):
+    pass
 
 
 class Event(Input):
@@ -395,7 +552,12 @@ class Wake(Input):
 
 @router.post("/runs", status_code=201)
 def start_run(payload: RunStart, request: Request):
-    return create_run(request.app, payload.goal, payload.subjects)
+    return create_run(
+        request.app,
+        payload.goal,
+        payload.subjects,
+        case=payload.case.model_dump() if payload.case else None,
+    )
 
 
 @router.post("/events")

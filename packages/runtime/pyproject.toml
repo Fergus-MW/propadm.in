@@ -3,7 +3,7 @@ name = "propadmin-runtime"
 version = "0.1.0"
 description = "Propadmin service gateway and autonomous session orchestration"
 requires-python = ">=3.12"
-dependencies = ["propadmin-core", "fastapi>=0.115,<1", "httpx>=0.28,<1", "uvicorn>=0.34,<1", "python-multipart>=0.0.20", "reportlab>=4,<5"]
+dependencies = ["propadmin-core", "fastapi>=0.115,<1", "httpx>=0.28,<1", "uvicorn>=0.34,<1", "python-multipart>=0.0.20", "reportlab>=4,<5", "opentelemetry-sdk>=1.38,<2"]
 
 [project.optional-dependencies]
 cloud = ["google-auth>=2.38"]

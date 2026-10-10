@@ -97,6 +97,22 @@ export interface paths1 {
     patch?: never;
     trace?: never;
 };
+"/v1/agent-runs/{run_id}/sync": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["sync_run_v1_agent_runs__run_id__sync_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
 "/v1/agent-runs/{run_id}/wake": {
     parameters: {
         query?: never;
@@ -665,22 +681,6 @@ export interface paths1 {
         cookie?: never;
     };
     get: operations["properties_v1_properties_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-};
-"/v1/properties/{property_id}": {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    get: operations["property_detail_v1_properties__property_id__get"];
     put?: never;
     post?: never;
     delete?: never;
