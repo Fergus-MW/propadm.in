@@ -1,0 +1,502 @@
+[
+ {
+  "answer_id": "1",
+  "title": "Communal Garden and Hedge Maintenance Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 50.8,
+  "staff": false,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "2",
+  "title": "Blocked toilet at Flat 3, 15 Willowmere Road, Alderwick, ZZ3 2ZZ",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 72.7,
+  "staff": true,
+  "actions": 6,
+  "failures": 1
+ },
+ {
+  "answer_id": "3",
+  "title": "Checkout Cleaning Estimate and Invoice",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 69.6,
+  "staff": true,
+  "actions": 5,
+  "failures": 1
+ },
+ {
+  "answer_id": "4",
+  "title": "Checkout Clean",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 88.1,
+  "staff": true,
+  "actions": 12,
+  "failures": 7
+ },
+ {
+  "answer_id": "5",
+  "title": "Check-Out Cleaning",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 89.9,
+  "staff": true,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "6",
+  "title": "Check-Out Works: Carpet Replacement and Repainting",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 71.5,
+  "staff": true,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "7",
+  "title": "Check-Out Works: Lounge Lighting and Ceiling Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 177.4,
+  "staff": true,
+  "actions": 10,
+  "failures": 3
+ },
+ {
+  "answer_id": "8",
+  "title": "Check-Out Works",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 94.8,
+  "staff": true,
+  "actions": 10,
+  "failures": 5
+ },
+ {
+  "answer_id": "9",
+  "title": "Front garden maintenance follow-up",
+  "execution": "fallback_completed",
+  "mode": "fallback",
+  "seconds": 127.4,
+  "staff": false,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "10",
+  "title": "Solar panel readings photo request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 44.8,
+  "staff": false,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "11",
+  "title": "Dishwasher Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 58.0,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "12",
+  "title": "Dishwasher Door Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 63.3,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "13",
+  "title": "Integrated Dishwasher Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 64.4,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "14",
+  "title": "Front Door Repair Request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 49.3,
+  "staff": false,
+  "actions": 3,
+  "failures": 1
+ },
+ {
+  "answer_id": "15",
+  "title": "Front Door Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 68.1,
+  "staff": false,
+  "actions": 7,
+  "failures": 1
+ },
+ {
+  "answer_id": "16",
+  "title": "Garden Door Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 61.7,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "17",
+  "title": "Kitchen Extractor Fan Repair Request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 41.7,
+  "staff": false,
+  "actions": 5,
+  "failures": 2
+ },
+ {
+  "answer_id": "18",
+  "title": "Garden Maintenance Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 78.4,
+  "staff": false,
+  "actions": 7,
+  "failures": 2
+ },
+ {
+  "answer_id": "19",
+  "title": "Garden Maintenance Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 65.0,
+  "staff": false,
+  "actions": 8,
+  "failures": 2
+ },
+ {
+  "answer_id": "20",
+  "title": "Property inspection",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 146.3,
+  "staff": true,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "21",
+  "title": "Key Replacement Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 60.3,
+  "staff": true,
+  "actions": 7,
+  "failures": 1
+ },
+ {
+  "answer_id": "22",
+  "title": "Front Door Lock Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 53.1,
+  "staff": false,
+  "actions": 6,
+  "failures": 1
+ },
+ {
+  "answer_id": "23",
+  "title": "Balcony Door Lock Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 122.0,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "24",
+  "title": "Oven repair request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 94.3,
+  "staff": true,
+  "actions": 7,
+  "failures": 2
+ },
+ {
+  "answer_id": "25",
+  "title": "Oven Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 55.8,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "26",
+  "title": "Oven Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 76.5,
+  "staff": false,
+  "actions": 7,
+  "failures": 1
+ },
+ {
+  "answer_id": "27",
+  "title": "Blocked Bath Drain Request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 45.2,
+  "staff": true,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "28",
+  "title": "Loose Water Pipe in the Back Garden",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 51.2,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "29",
+  "title": "Cracked basin repair request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 63.0,
+  "staff": true,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "30",
+  "title": "Plumbing request: slow-filling toilet and bathroom tap",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 51.6,
+  "staff": false,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "31",
+  "title": "Plumbing request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 59.5,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "32",
+  "title": "Toilet flush mechanism repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 56.9,
+  "staff": false,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "33",
+  "title": "Bathroom Tap Plumbing Request",
+  "execution": "fallback_completed",
+  "mode": "fallback",
+  "seconds": 146.3,
+  "staff": false,
+  "actions": 8,
+  "failures": 0
+ },
+ {
+  "answer_id": "34",
+  "title": "Shower Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 63.9,
+  "staff": false,
+  "actions": 5,
+  "failures": 1
+ },
+ {
+  "answer_id": "35",
+  "title": "Shower Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 41.2,
+  "staff": false,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "36",
+  "title": "Shower Tap Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 57.3,
+  "staff": false,
+  "actions": 6,
+  "failures": 1
+ },
+ {
+  "answer_id": "37",
+  "title": "Shower Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 62.4,
+  "staff": false,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "38",
+  "title": "Washing Machine Replacement Request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 51.9,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "39",
+  "title": "Washing Machine Repair Request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 41.7,
+  "staff": true,
+  "actions": 2,
+  "failures": 0
+ },
+ {
+  "answer_id": "40",
+  "title": "Washing Machine Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 49.3,
+  "staff": false,
+  "actions": 4,
+  "failures": 1
+ },
+ {
+  "answer_id": "41",
+  "title": "Washing Machine Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 55.4,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "42",
+  "title": "Washing Machine Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 63.8,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "43",
+  "title": "Washing Machine Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 52.9,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "44",
+  "title": "Window Handle Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 49.6,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "45",
+  "title": "Kitchen Window and Patio Door Window Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 53.0,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "46",
+  "title": "Bedroom Window Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 56.9,
+  "staff": false,
+  "actions": 5,
+  "failures": 1
+ },
+ {
+  "answer_id": "47",
+  "title": "Bedroom Window Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 48.5,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ },
+ {
+  "answer_id": "48",
+  "title": "Bathroom Window Repair Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 57.6,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "49",
+  "title": "Shed Door Repair Request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 34.2,
+  "staff": false,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "50",
+  "title": "Bedroom Window Repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 61.0,
+  "staff": false,
+  "actions": 4,
+  "failures": 0
+ }
+]

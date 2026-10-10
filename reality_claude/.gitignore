@@ -1,0 +1,5 @@
+# Dry-run evidence: keep answers and the index, not the large raw traces or broken diagnostic runs.
+dryrun/
+dryrun-all-*/
+dryrun-all.log
+dryrun-all/ANSWERS/*/trace.json
