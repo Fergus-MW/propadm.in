@@ -1,0 +1,41 @@
+Makefile
+  s_57c4e448f05854::t_e730142ec5f99b 21
+README.md
+  s_57c4e448f05854::t_1771ee5c67e9a4 33-35
+cloudbuild/pr-checks.yaml
+  s_57c4e448f05854::t_61a2afd71bdec2 26
+infra/scripts/dev.py
+  s_57c4e448f05854::t_71f70368a45c9b 172,214-221
+landing/README.md
+  s_57c4e448f05854::t_6129268f73479e 1-33
+landing/package.json
+  s_57c4e448f05854::t_a481d961430950 1-13
+landing/public/index.html
+  s_57c4e448f05854::t_979df5611387c4 1-430
+landing/public/logo.svg
+  s_57c4e448f05854::t_6190916db06429 1-5
+landing/public/main.js
+  s_57c4e448f05854::t_d916857c0ce879 1-331
+landing/public/styles.css
+  s_57c4e448f05854::t_f8f6fbf07f7c3d 1-630
+landing/server.mjs
+  s_57c4e448f05854::t_273a6eab00d9de 1-149
+landing/test/server.test.mjs
+  s_57c4e448f05854::t_61cbe550760ea6 1-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aeaae806bcf4e2e8cf44f896e48617be9a49164c",
+  "prompts": {},
+  "sessions": {
+    "s_57c4e448f05854": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "88164f9a-64e6-4e7c-bba5-e19da904f257",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
