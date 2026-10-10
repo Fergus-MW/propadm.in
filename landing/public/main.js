@@ -68,7 +68,7 @@
     else setEyes(REST.x, REST.y);
   };
 
-  /* Every other little house on the page (team, footer peek) watches the cursor too */
+  /* The little house in the footer watches the cursor too */
   const otherEyes = [...document.querySelectorAll("svg[data-eyes] .eyes")];
   let othersFrame = 0;
   const aimOthers = () => {

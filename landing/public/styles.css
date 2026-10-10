@@ -490,55 +490,6 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
 .js .receipt-wrap:not(.in) .stamp { opacity: 0; transform: rotate(-8deg) scale(2.4); }
 .note { margin: 56px 0 0; font: italic 400 15px var(--serif); opacity: .75; }
 
-/* ---------- Company ---------- */
-.company {
-  background-color: var(--sky);
-  background-image:
-    linear-gradient(rgba(11, 11, 11, .07) 1.5px, transparent 1.5px),
-    linear-gradient(90deg, rgba(11, 11, 11, .07) 1.5px, transparent 1.5px);
-  background-size: 36px 36px;
-}
-.team { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; align-items: start; }
-.member:nth-child(even) { margin-top: 48px; }
-.member-card {
-  padding: 12px 12px 20px; background: var(--paper);
-  border: var(--line) solid var(--ink); border-radius: 22px; box-shadow: 5px 5px 0 var(--ink);
-  transition: transform .35s var(--bounce), box-shadow .35s var(--bounce);
-}
-.member-card:hover { transform: translateY(-6px) rotate(-1.5deg); box-shadow: 8px 8px 0 var(--ink); }
-.avatar {
-  position: relative; aspect-ratio: 1 / .86;
-  background: var(--tile); border: var(--line) solid var(--ink); border-radius: 14px;
-  transition: background .35s ease;
-}
-/* Duotone print look: greyscale photo multiplied onto the tile colour, full colour on hover */
-.avatar img {
-  display: block; width: 100%; height: 100%; border-radius: 11.5px;
-  object-fit: cover; object-position: var(--pos, 50% 30%);
-  filter: grayscale(1) contrast(1.1) brightness(1.06); mix-blend-mode: multiply;
-  transition: filter .35s ease;
-}
-.member-card:hover .avatar { background: #fff; }
-.member-card:hover .avatar img { filter: none; }
-.badge {
-  position: absolute; right: -12px; bottom: -14px; width: 54px; height: auto;
-  color: var(--ink); overflow: visible; transform-origin: 50% 100%;
-}
-.member-card:hover .badge { animation: hop .6s var(--bounce); }
-.member h3 { margin: 16px 6px 3px; font: 800 23px/1.05 var(--display); letter-spacing: -.03em; }
-.role { margin: 0 6px 12px; font: 600 14px var(--display); opacity: .6; }
-.bio { margin: 0 6px 14px; font: 400 15.5px/1.45 var(--serif); }
-.fact {
-  margin: 0 6px 16px; padding: 8px 10px; border: 2px dashed var(--ink); border-radius: 10px;
-  font: 600 13px/1.35 var(--display);
-}
-.fact::before { content: "Fun fact · "; opacity: .55; }
-.li-link {
-  display: inline-flex; align-items: center; gap: 6px; margin: 0 6px; justify-self: start;
-  font: 700 14px var(--display); text-decoration: none; border-bottom: 2px solid var(--ink);
-}
-.li-link:hover { background: var(--sun); }
-
 /* ---------- Outro + footer ---------- */
 .outro { overflow: hidden; padding-bottom: 0; background: var(--ink); color: var(--paper); text-align: center; }
 .outro p { max-width: 34ch; margin: 20px auto 34px; font: 400 20px/1.5 var(--serif); opacity: .85; }
@@ -565,9 +516,6 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
   .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 0; }
   .track, .walker, .step::before { display: none; }
   .receipts { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 720px; margin: 0 auto; }
-  .team { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .member:nth-child(even) { margin-top: 0; }
-  .member:nth-child(3n + 2) { margin-top: 40px; }
 }
 @media (max-width: 900px) {
   .section { padding: 72px 16px; }
@@ -575,14 +523,9 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
   .foot { padding: 22px 16px; }
 }
 @media (max-width: 640px) {
+  .hl::before { display: none; }
   .steps, .receipts { grid-template-columns: 1fr; }
   .receipts { max-width: 380px; }
-  .team { grid-template-columns: 1fr; }
-  .member:nth-child(3n + 2) { margin-top: 0; }
-  .member-card { display: grid; grid-template-columns: 108px minmax(0, 1fr); column-gap: 14px; align-items: start; }
-  .avatar { grid-row: span 5; aspect-ratio: 1; }
-  .badge { width: 40px; right: -8px; bottom: -10px; }
-  .member h3 { margin-top: 4px; }
   .how-foot { align-items: flex-start; font-size: 17px; }
 }
 
