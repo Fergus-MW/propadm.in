@@ -1,0 +1,21 @@
+ANSWERS/README.md
+  s_911a0e0b72e3d4::t_bc52b0d569f4b0 1-36
+README.md
+  s_911a0e0b72e3d4::t_cc911384298d71 380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8d4aefc6a87504d6644e206d1d6a04c608f3431e",
+  "prompts": {},
+  "sessions": {
+    "s_911a0e0b72e3d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a20b19fa-0f41-47fc-b508-9b5ef17c73db",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
