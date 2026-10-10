@@ -155,3 +155,21 @@ the portal does not invent new accounting or compliance records.
 - `pnpm --dir services/admin-panel generate:api --check`
 - `make dev` plus browser checks of approval, demo navigation, trip booking and
   desktop/mobile layouts.
+
+## Tanner Street conversation
+
+The sample workspace includes the supplied 10 October shower/leak interaction
+through 09:53: PRO-1042 is the £64.99 approved routine shower replacement;
+PRO-1043 is the £180 emergency basin leak, with a £50 ordinary spend limit.
+Both reference the same 10:30 visit by Tom Reid and link to each other. The
+manager inbox contains ten scripted emails, two call transcripts and two texts,
+including recipient/subject metadata. The photo is represented by its supplied
+filename only; no image or working product link was provided.
+
+Open `/portal/inbox/demo-pro-1043?demo=1` for the emergency thread or
+`/portal/inbox/demo-pro-1042?demo=1` for the shower. Calling `POST /v1/portal/demo`
+adds missing sample jobs to an existing workspace without overwriting edits.
+These records remain isolated from live graph data and do not execute any
+external email, SMS, call, booking, payment or contractor dispatch. The copied
+script records the requested fictional sequence; it is not evidence that an
+agent performed those actions or a validated safety playbook.

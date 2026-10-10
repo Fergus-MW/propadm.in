@@ -159,6 +159,11 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
         </p>
         <Flags flags={item.flags} />
       </div>
+      {item.related_items?.map(related => (
+        <p key={related.id}><Link className="draw-underline" href={portalHref("maintenance", demo, related.id)}>
+          Related repair: {related.title} ↗
+        </Link></p>
+      ))}
       <EmergencyControls item={item} demo={demo} />
       <div className="portal-job-layout">
         <div>

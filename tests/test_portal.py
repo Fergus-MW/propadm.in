@@ -35,7 +35,7 @@ def test_demo_is_opt_in_isolated_persistent_and_authenticated(client):
     assert client.get("/v1/portal?demo=true").json()["items"] == []
     before = client.get("/v1/portal").json()
     data = demo(client)
-    assert len(data["items"]) == 5
+    assert len(data["items"]) == 7
     assert client.get("/v1/portal").json() == before
     item = data["items"][1]
     response = command(client, item, "takeover")
@@ -498,3 +498,29 @@ def test_vulnerability_raises_urgency_after_an_earlier_routine_override(client):
     item = next(i for i in client.get("/v1/portal").json()["items"] if i["id"] == item_id)
     assert item["urgency"] == "Urgent" and "Vulnerable occupant" in item["flags"]
     assert "Human only" in item["flags"] and item["autonomy"] <= 1
+
+
+def test_tanner_script_is_linked_isolated_and_loading_preserves_edits(client):
+    data = demo(client)
+    shower, leak = [
+        next(i for i in data["items"] if i["id"] == key)
+        for key in ("demo-pro-1042", "demo-pro-1043")
+    ]
+    assert shower["approved"] and shower["estimate"] == 64.99 and shower["spend_limit"] == 50
+    assert shower["urgency"] == "Routine" and not shower["emergency"]
+    assert leak["emergency"] and leak["estimate"] == 180 and leak["stage"] == 3
+    assert not leak["tenant_fixed"]
+    assert shower["related_items"][0]["id"] == leak["id"]
+    assert leak["related_items"][0]["id"] == shower["id"]
+    messages = {m["id"]: m for item in (shower, leak) for m in item["messages"]}
+    assert len(messages) == 14
+    assert {m["channel"] for m in messages.values()} == {"Email", "SMS", "Call transcript"}
+    assert messages["tanner-email-3"]["attachments"] == ["shower_head.jpg"]
+    taken = command(client, shower, "takeover").json()
+    again = demo(client)
+    assert len(again["items"]) == 7
+    assert next(i for i in again["items"] if i["id"] == shower["id"])["version"] == taken["version"]
+    assert not any(
+        i["id"].startswith("demo-pro-") for i in client.get("/v1/portal").json()["items"]
+    )
+    assert not client.app.state.store.snapshot().get("portal_deliveries")

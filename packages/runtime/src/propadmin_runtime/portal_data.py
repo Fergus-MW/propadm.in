@@ -4,6 +4,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from .portal_emergency import evidence_key
+from .portal_tanner import tanner_items
 
 STAGES = [
     "Reported",
@@ -178,7 +179,7 @@ def demo_data():
         )
     ]
     return dict(
-        items=records,
+        items=[*records, *tanner_items()],
         properties=properties,
         trips=[],
         settings={"paused": False},

@@ -13,6 +13,7 @@ from .auth import require_admin
 from .portal_data import EMERGENCY_STAGES, HUMAN_FLAGS, STAGES, demo_data, snapshot
 from .portal_emergency import activate, end_emergency
 from .portal_policy import blocked
+from .portal_tanner import tanner_items
 
 router = APIRouter(prefix="/v1/portal", dependencies=[Depends(require_admin)])
 
@@ -60,6 +61,10 @@ def initialise_demo(request: Request):
     def write(state):
         if not state.get("portal_demo", {}).get("items"):
             state["portal_demo"] = demo_data()
+        existing = {item["id"] for item in state["portal_demo"]["items"]}
+        state["portal_demo"]["items"].extend(
+            item for item in tanner_items() if item["id"] not in existing
+        )
         return snapshot(state, True)
 
     return request.app.state.store.mutate(write)

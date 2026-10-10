@@ -106,6 +106,11 @@ export function Inbox({ data, id }: { data: PortalData; id?: string }) {
                 {active.handover ||
                   "Open the source record to review the available evidence."}
               </p>
+              {active.related_items?.map(related => (
+                <p key={related.id}><Link className="draw-underline" href={portalHref("inbox", data.demo, related.id)}>
+                  Related: {related.title} ↗
+                </Link></p>
+              ))}
               <h3>Facts used</h3>
               {active.facts.length ? (
                 active.facts.map((f) => (
@@ -188,6 +193,9 @@ function Thread({ item, demo }: { item: PortalItem; demo: boolean }) {
                 {message.channel} · {when(message.at)}
               </span>
             </div>
+            {message.recipient && <p className="caption">To: {message.recipient}</p>}
+            {message.subject && <h4>{message.subject}</h4>}
+            {message.attachments?.map(name => <p className="caption" key={name}>Attachment referenced: {name}</p>)}
             <p>
               <Highlight text={message.text} />
             </p>

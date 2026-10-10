@@ -35,6 +35,7 @@ export type PortalItem = {
   version: number;
   demo: boolean;
   source_id: string | null;
+  related_items?: { id: string; title: string }[];
   reported_at: string | null;
   due_at: string | null;
   estimate: number | null;
@@ -52,6 +53,9 @@ export type PortalItem = {
   messages: {
     id: string;
     author: string;
+    recipient?: string;
+    subject?: string;
+    attachments?: string[];
     text: string;
     channel: string;
     at: string | null;
