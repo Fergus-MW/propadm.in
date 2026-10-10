@@ -97,7 +97,7 @@ def test_send_records_email_entity_with_thread_ids(service, monkeypatch):
     response = service.post(
         "/internal/send",
         json={"to": ["aisha.khan@example.net"], "subject": "Visit booked",
-              "body": "Engineer visits Tuesday.", "entity_ids": [ticket], "run_id": "run_9"},
+              "body": "Engineer visits **Tuesday**.\nThanks", "entity_ids": [ticket], "run_id": "run_9"},
         headers=INTERNAL,
     )  # fmt: skip
     assert response.status_code == 200, response.text
@@ -106,7 +106,8 @@ def test_send_records_email_entity_with_thread_ids(service, monkeypatch):
     assert body == {
         "to": ["aisha.khan@example.net"],
         "subject": "Visit booked",
-        "text": "Engineer visits Tuesday.",
+        "text": "Engineer visits **Tuesday**.\nThanks",  # Markdown stays the plain-text part
+        "html": "<p>Engineer visits <strong>Tuesday</strong>.<br>\nThanks</p>\n",
     }
     email = service.app.state.graph.get_entity(response.json()["email_id"])
     assert email["fields"]["thread_id"] == "thd_out"

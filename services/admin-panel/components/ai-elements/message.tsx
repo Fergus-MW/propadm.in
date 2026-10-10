@@ -1,8 +1,8 @@
 "use client";
 // Adapted from AI Elements (vercel/ai-elements) Message: markdown via Streamdown, no plugins.
-import type { ComponentProps, HTMLAttributes } from "react";
+import type { HTMLAttributes } from "react";
 import { memo } from "react";
-import { Streamdown } from "streamdown";
+import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
 
 export const Message = ({
@@ -35,16 +35,7 @@ export const MessageContent = ({
 );
 
 export const MessageResponse = memo(
-  ({ className, ...props }: ComponentProps<typeof Streamdown>) => (
-    <Streamdown
-      className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className,
-      )}
-      mode="static"
-      {...props}
-    />
-  ),
+  Markdown,
   (previous, next) => previous.children === next.children,
 );
 MessageResponse.displayName = "MessageResponse";
