@@ -1,4 +1,6 @@
 project_id = "your-unique-propadmin-project"
+# Google Chat incoming webhook for new landing signups. Empty disables it.
+signup_webhook_url = ""
 build_service_account = "propadmin-build@your-unique-propadmin-project.iam.gserviceaccount.com"
 # Each image must already exist in Artifact Registry.
 images = {

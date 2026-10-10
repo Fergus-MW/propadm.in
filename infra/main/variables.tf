@@ -62,3 +62,9 @@ variable "enable_domain_mappings" {
   type        = bool
   default     = false
 }
+variable "signup_webhook_url" {
+  description = "Chat webhook that receives each new landing signup. Empty disables it."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

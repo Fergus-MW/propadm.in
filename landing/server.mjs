@@ -1,4 +1,4 @@
-// Serves the landing page from public/ and saves signup emails to a CSV file.
+// Serves the landing page from public/ saves signups, and posts new ones to a chat webhook.
 // Zero dependencies: run with `node landing/server.mjs`.
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
@@ -11,6 +11,10 @@ const MAX_BODY_BYTES = 2048;
 // The first character must be alphanumeric so a saved email can never start a
 // spreadsheet formula; the character set also rules out commas and quotes in the CSV.
 const EMAIL = /^[a-z0-9][a-z0-9._%+-]{0,63}@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
+// Names and companies go to a chat message: no control characters, and no angle
+// brackets so nobody can smuggle in an @all mention.
+const cleanText = (value) =>
+  typeof value === "string" ? value.replace(/[\p{Cc}<>]/gu, " ").replace(/\s+/g, " ").trim() : "";
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -48,6 +52,8 @@ export async function createLandingServer({
   publicDir = join(HERE, "public"),
   signupsPath = join(HERE, ".data", "signups.csv"),
   signupStore,
+  webhookUrl = process.env.SIGNUP_WEBHOOK_URL ?? "",
+  request = fetch,
 } = {}) {
   const root = resolve(publicDir);
   const saveSignup = signupStore ?? await createCsvSignupStore(signupsPath);
@@ -71,7 +77,26 @@ export async function createLandingServer({
     if (email.length > 254 || !EMAIL.test(email)) {
       return json(res, 400, { error: "That doesn't look like an email address." });
     }
+    const name = cleanText(payload?.name);
+    const company = cleanText(payload?.company);
+    if (!name || name.length > 100) return json(res, 400, { error: "Tell us your name." });
+    if (!company || company.length > 100) return json(res, 400, { error: "Tell us your company." });
     if (!await saveSignup(email)) return json(res, 200, { ok: true, duplicate: true });
+    // The signup is already saved, so a webhook outage is logged rather than shown
+    // to the visitor. Awaited because Cloud Run throttles CPU after the response.
+    if (webhookUrl) {
+      try {
+        const response = await request(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json; charset=UTF-8" },
+          body: JSON.stringify({ text: `New signup: ${name} (${company}) <mailto:${email}|${email}>` }),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) console.error(`Signup webhook failed (${response.status})`);
+      } catch (error) {
+        console.error("Signup webhook failed", error);
+      }
+    }
     return json(res, 201, { ok: true });
   }
 

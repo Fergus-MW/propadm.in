@@ -18,11 +18,12 @@ const start = async () => {
 };
 const stop = () => new Promise((done) => server.close(done));
 const rows = async () => (await readFile(csv, "utf8")).trim().split("\n");
+const person = { name: "Ada Lovelace", company: "Analytical Lets" };
 const signup = (body, type = "application/json") =>
   fetch(`${base}/api/signup`, {
     method: "POST",
     headers: { "Content-Type": type },
-    body: typeof body === "string" ? body : JSON.stringify(body),
+    body: typeof body === "string" ? body : JSON.stringify({ ...person, ...body }),
   });
 
 before(async () => {
@@ -61,6 +62,8 @@ test("rejects bad input without saving anything", async () => {
   for (const email of ["", "not-an-email", "=HYPERLINK()@evil.com", "a,b@example.com", 42]) {
     assert.equal((await signup({ email })).status, 400, `accepted ${email}`);
   }
+  assert.equal((await signup({ email: "ok@example.com", name: " " })).status, 400);
+  assert.equal((await signup({ email: "ok@example.com", company: "x".repeat(101) })).status, 400);
   assert.equal((await signup("{not json")).status, 400);
   assert.equal((await signup("email=a@example.com", "application/x-www-form-urlencoded")).status, 415);
   assert.equal((await signup({ email: `${"x".repeat(3000)}@example.com` })).status, 413);
@@ -142,12 +145,42 @@ test("the HTTP endpoint normalises emails for a durable signup store", async () 
   try {
     const post = (email) => fetch(`http://127.0.0.1:${durable.address().port}/api/signup`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ ...person, email }),
     });
     assert.equal((await post(" Hello@Example.com ")).status, 201);
     assert.deepEqual(await (await post("hello@example.com")).json(), { ok: true, duplicate: true });
     assert.deepEqual([...saved], ["hello@example.com"]);
   } finally {
     await new Promise((done) => durable.close(done));
+  }
+});
+
+test("new signups post one sanitised chat message; webhook outages still save", async () => {
+  const sent = [];
+  let webhookStatus = 200;
+  const hooked = await createLandingServer({
+    signupStore: async (email) => email !== "dupe@example.com",
+    webhookUrl: "https://chat.example/hook",
+    request: async (url, options) => {
+      sent.push({ url, ...JSON.parse(options.body) });
+      return new Response(null, { status: webhookStatus });
+    },
+  });
+  await new Promise((ready) => hooked.listen(0, "127.0.0.1", ready));
+  try {
+    const post = (body) => fetch(`http://127.0.0.1:${hooked.address().port}/api/signup`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    assert.equal((await post({ name: "Ada <users/all>\n", company: "Lets Ltd", email: "Ada@Example.com" })).status, 201);
+    assert.deepEqual(sent, [{
+      url: "https://chat.example/hook",
+      text: "New signup: Ada users/all (Lets Ltd) <mailto:ada@example.com|ada@example.com>",
+    }]);
+    assert.equal((await post({ ...person, email: "dupe@example.com" })).status, 200);
+    assert.equal(sent.length, 1);
+    webhookStatus = 500;
+    assert.equal((await post({ ...person, email: "down@example.com" })).status, 201);
+  } finally {
+    await new Promise((done) => hooked.close(done));
   }
 });
