@@ -44,6 +44,9 @@ landlord statements. The admin who decides what an "entity" is and how they conn
 
 ## ▶ See it run
 
+**[Watch or download Properly Demo v1](Properly%20Demo%20v1.mov)** (MOV).
+The original recording is stored in the repository root using Git LFS.
+
 <div align="center">
 
 [![Properly demo: the property graph forming live as sources are ingested](docs/media/demo.gif)](docs/media/demo.mp4)
