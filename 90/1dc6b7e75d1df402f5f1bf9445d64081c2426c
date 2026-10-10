@@ -1,0 +1,252 @@
+reality_claude/runner.py
+  s_911a0e0b72e3d4::t_4efbf035f7e5d1 1-183
+  s_911a0e0b72e3d4::t_d01a878d05bd35 184-257
+reality_claude/report.py
+  s_911a0e0b72e3d4::t_0a75c9159aea72 1-161
+  s_911a0e0b72e3d4::t_419881b170ba15 162-184
+reality_claude/intake.py
+  s_911a0e0b72e3d4::t_e72e790d75513f 1-74
+reality_claude/tests/test_offline.py
+  s_911a0e0b72e3d4::t_daafbc126c71c6 1-105
+  s_911a0e0b72e3d4::t_67753e07320ebd 106-118
+reality_claude/README.md
+  s_911a0e0b72e3d4::t_aa19f2f98e73f8 1-66
+  s_911a0e0b72e3d4::t_d2b09090d8c889 67-70
+reality_claude/stack.py
+  s_911a0e0b72e3d4::t_e457576406b2ff 1-332
+reality_claude/__main__.py
+  s_911a0e0b72e3d4::t_679f2888d9787b 1-30
+reality_claude/__init__.py
+  s_911a0e0b72e3d4::t_aa224fcdb92b9f 1
+reality_claude/.gitignore
+  s_911a0e0b72e3d4::t_b965aaad0ba2de 1-5
+reality_claude/dryrun-all/ANSWERS/1/ANSWER.md
+  s_911a0e0b72e3d4::t_1cc7fdcc300fd0 1-85
+reality_claude/dryrun-all/ANSWERS/1/REASONING.md
+  s_911a0e0b72e3d4::t_704c9d108dc191 1-68
+reality_claude/dryrun-all/ANSWERS/10/ANSWER.md
+  s_911a0e0b72e3d4::t_1edc4961c0aa39 1-67
+reality_claude/dryrun-all/ANSWERS/10/REASONING.md
+  s_911a0e0b72e3d4::t_7ee5742d3bb567 1-65
+reality_claude/dryrun-all/ANSWERS/11/ANSWER.md
+  s_911a0e0b72e3d4::t_df62720479e7ae 1-102
+reality_claude/dryrun-all/ANSWERS/11/REASONING.md
+  s_911a0e0b72e3d4::t_76f8c70b4e8f10 1-86
+reality_claude/dryrun-all/ANSWERS/12/ANSWER.md
+  s_911a0e0b72e3d4::t_abf4133323d2e8 1-105
+reality_claude/dryrun-all/ANSWERS/12/REASONING.md
+  s_911a0e0b72e3d4::t_c4003c515f53d1 1-78
+reality_claude/dryrun-all/ANSWERS/13/ANSWER.md
+  s_911a0e0b72e3d4::t_e0c3fe092f11e1 1-87
+reality_claude/dryrun-all/ANSWERS/13/REASONING.md
+  s_911a0e0b72e3d4::t_dc6755506ff38a 1-81
+reality_claude/dryrun-all/ANSWERS/14/ANSWER.md
+  s_911a0e0b72e3d4::t_df5c5a2788ea1e 1-51
+reality_claude/dryrun-all/ANSWERS/14/REASONING.md
+  s_911a0e0b72e3d4::t_72c954ddf0ae4a 1-67
+reality_claude/dryrun-all/ANSWERS/15/ANSWER.md
+  s_911a0e0b72e3d4::t_09d06b1fceec46 1-122
+reality_claude/dryrun-all/ANSWERS/15/REASONING.md
+  s_911a0e0b72e3d4::t_8407c19e616378 1-87
+reality_claude/dryrun-all/ANSWERS/16/ANSWER.md
+  s_911a0e0b72e3d4::t_29393b3090371c 1-89
+reality_claude/dryrun-all/ANSWERS/16/REASONING.md
+  s_911a0e0b72e3d4::t_0f7118e33e0d65 1-78
+reality_claude/dryrun-all/ANSWERS/17/ANSWER.md
+  s_911a0e0b72e3d4::t_8e58a52f8e37ff 1-76
+reality_claude/dryrun-all/ANSWERS/17/REASONING.md
+  s_911a0e0b72e3d4::t_6fbda874cec9d9 1-64
+reality_claude/dryrun-all/ANSWERS/18/ANSWER.md
+  s_911a0e0b72e3d4::t_9e77fa8a9c56c3 1-107
+reality_claude/dryrun-all/ANSWERS/18/REASONING.md
+  s_911a0e0b72e3d4::t_73fda5f365deb5 1-87
+reality_claude/dryrun-all/ANSWERS/19/ANSWER.md
+  s_911a0e0b72e3d4::t_df3b641be0d01d 1-118
+reality_claude/dryrun-all/ANSWERS/19/REASONING.md
+  s_911a0e0b72e3d4::t_220ff02832da2f 1-83
+reality_claude/dryrun-all/ANSWERS/2/ANSWER.md
+  s_911a0e0b72e3d4::t_a704d73ac4adf8 1-113
+reality_claude/dryrun-all/ANSWERS/2/REASONING.md
+  s_911a0e0b72e3d4::t_1accd802fe9105 1-93
+reality_claude/dryrun-all/ANSWERS/20/ANSWER.md
+  s_911a0e0b72e3d4::t_efb2fcd6ea2795 1-110
+reality_claude/dryrun-all/ANSWERS/20/REASONING.md
+  s_911a0e0b72e3d4::t_f467e28cae8c04 1-87
+reality_claude/dryrun-all/ANSWERS/21/ANSWER.md
+  s_911a0e0b72e3d4::t_a277b3739cf479 1-122
+reality_claude/dryrun-all/ANSWERS/21/REASONING.md
+  s_911a0e0b72e3d4::t_73dab976d0dcbf 1-87
+reality_claude/dryrun-all/ANSWERS/22/ANSWER.md
+  s_911a0e0b72e3d4::t_b2319b9ed466b0 1-112
+reality_claude/dryrun-all/ANSWERS/22/REASONING.md
+  s_911a0e0b72e3d4::t_98fcaf962e06b5 1-78
+reality_claude/dryrun-all/ANSWERS/23/ANSWER.md
+  s_911a0e0b72e3d4::t_05dc69f72e0812 1-98
+reality_claude/dryrun-all/ANSWERS/23/REASONING.md
+  s_911a0e0b72e3d4::t_08c8117f8a5083 1-83
+reality_claude/dryrun-all/ANSWERS/24/ANSWER.md
+  s_911a0e0b72e3d4::t_e9ee197638f5ac 1-124
+reality_claude/dryrun-all/ANSWERS/24/REASONING.md
+  s_911a0e0b72e3d4::t_b9382e6a70b819 1-98
+reality_claude/dryrun-all/ANSWERS/25/ANSWER.md
+  s_911a0e0b72e3d4::t_505ef545459938 1-98
+reality_claude/dryrun-all/ANSWERS/25/REASONING.md
+  s_911a0e0b72e3d4::t_b543d72cd52cee 1-80
+reality_claude/dryrun-all/ANSWERS/26/ANSWER.md
+  s_911a0e0b72e3d4::t_98d2f4ad44934f 1-110
+reality_claude/dryrun-all/ANSWERS/26/REASONING.md
+  s_911a0e0b72e3d4::t_111c60eed19864 1-89
+reality_claude/dryrun-all/ANSWERS/27/ANSWER.md
+  s_911a0e0b72e3d4::t_b1fcdcc4f2b615 1-66
+reality_claude/dryrun-all/ANSWERS/27/REASONING.md
+  s_911a0e0b72e3d4::t_ba82eb16f091b5 1-66
+reality_claude/dryrun-all/ANSWERS/28/ANSWER.md
+  s_911a0e0b72e3d4::t_486d99a899126e 1-94
+reality_claude/dryrun-all/ANSWERS/28/REASONING.md
+  s_911a0e0b72e3d4::t_363948ec7087d4 1-75
+reality_claude/dryrun-all/ANSWERS/29/ANSWER.md
+  s_911a0e0b72e3d4::t_f66a4747873b8c 1-100
+reality_claude/dryrun-all/ANSWERS/29/REASONING.md
+  s_911a0e0b72e3d4::t_f39368f03f6346 1-76
+reality_claude/dryrun-all/ANSWERS/3/ANSWER.md
+  s_911a0e0b72e3d4::t_13a3f0b591b50f 1-95
+reality_claude/dryrun-all/ANSWERS/3/REASONING.md
+  s_911a0e0b72e3d4::t_1cca95aff2c3d9 1-88
+reality_claude/dryrun-all/ANSWERS/30/ANSWER.md
+  s_911a0e0b72e3d4::t_b33bd567314e83 1-90
+reality_claude/dryrun-all/ANSWERS/30/REASONING.md
+  s_911a0e0b72e3d4::t_ce7576393e0dce 1-77
+reality_claude/dryrun-all/ANSWERS/31/ANSWER.md
+  s_911a0e0b72e3d4::t_e936c680ac2916 1-126
+reality_claude/dryrun-all/ANSWERS/31/REASONING.md
+  s_911a0e0b72e3d4::t_2b558c509d02c3 1-92
+reality_claude/dryrun-all/ANSWERS/32/ANSWER.md
+  s_911a0e0b72e3d4::t_b1b9c1ab7ad3bd 1-116
+reality_claude/dryrun-all/ANSWERS/32/REASONING.md
+  s_911a0e0b72e3d4::t_2f072973ec46c0 1-86
+reality_claude/dryrun-all/ANSWERS/33/ANSWER.md
+  s_911a0e0b72e3d4::t_a81aa03b190ca4 1-39
+reality_claude/dryrun-all/ANSWERS/33/REASONING.md
+  s_911a0e0b72e3d4::t_6bd5607a7273bc 1-39
+reality_claude/dryrun-all/ANSWERS/34/ANSWER.md
+  s_911a0e0b72e3d4::t_718d259fc40c50 1-110
+reality_claude/dryrun-all/ANSWERS/34/REASONING.md
+  s_911a0e0b72e3d4::t_34960ed70b9d9c 1-85
+reality_claude/dryrun-all/ANSWERS/35/ANSWER.md
+  s_911a0e0b72e3d4::t_75a99aa7456c3f 1-63
+reality_claude/dryrun-all/ANSWERS/35/REASONING.md
+  s_911a0e0b72e3d4::t_91e2cea49b1244 1-60
+reality_claude/dryrun-all/ANSWERS/36/ANSWER.md
+  s_911a0e0b72e3d4::t_c6b967a659a8d1 1-115
+reality_claude/dryrun-all/ANSWERS/36/REASONING.md
+  s_911a0e0b72e3d4::t_29181da1a814a5 1-88
+reality_claude/dryrun-all/ANSWERS/37/ANSWER.md
+  s_911a0e0b72e3d4::t_4f206858e5be06 1-104
+reality_claude/dryrun-all/ANSWERS/37/REASONING.md
+  s_911a0e0b72e3d4::t_3a6c6cdc452b9f 1-83
+reality_claude/dryrun-all/ANSWERS/38/ANSWER.md
+  s_911a0e0b72e3d4::t_01d408cef0f412 1-80
+reality_claude/dryrun-all/ANSWERS/38/REASONING.md
+  s_911a0e0b72e3d4::t_5f6eda935041c7 1-70
+reality_claude/dryrun-all/ANSWERS/39/ANSWER.md
+  s_911a0e0b72e3d4::t_0c2ee0f13cf026 1-76
+reality_claude/dryrun-all/ANSWERS/39/REASONING.md
+  s_911a0e0b72e3d4::t_f72af86f615369 1-70
+reality_claude/dryrun-all/ANSWERS/4/ANSWER.md
+  s_911a0e0b72e3d4::t_2deb1f9e35c7e7 1-99
+reality_claude/dryrun-all/ANSWERS/4/REASONING.md
+  s_911a0e0b72e3d4::t_69b462a760d0ea 1-89
+reality_claude/dryrun-all/ANSWERS/40/ANSWER.md
+  s_911a0e0b72e3d4::t_250ea39473bba2 1-96
+reality_claude/dryrun-all/ANSWERS/40/REASONING.md
+  s_911a0e0b72e3d4::t_9d771956c0f84a 1-72
+reality_claude/dryrun-all/ANSWERS/41/ANSWER.md
+  s_911a0e0b72e3d4::t_66debfaad470b0 1-73
+reality_claude/dryrun-all/ANSWERS/41/REASONING.md
+  s_911a0e0b72e3d4::t_c6c910a36d98de 1-72
+reality_claude/dryrun-all/ANSWERS/42/ANSWER.md
+  s_911a0e0b72e3d4::t_571784511de841 1-91
+reality_claude/dryrun-all/ANSWERS/42/REASONING.md
+  s_911a0e0b72e3d4::t_7e142a448210d3 1-83
+reality_claude/dryrun-all/ANSWERS/43/ANSWER.md
+  s_911a0e0b72e3d4::t_b893248f01a9cf 1-114
+reality_claude/dryrun-all/ANSWERS/43/REASONING.md
+  s_911a0e0b72e3d4::t_34507a64c688fb 1-85
+reality_claude/dryrun-all/ANSWERS/44/ANSWER.md
+  s_911a0e0b72e3d4::t_feaadbdf95abd8 1-98
+reality_claude/dryrun-all/ANSWERS/44/REASONING.md
+  s_911a0e0b72e3d4::t_dd8bfeb7798db4 1-85
+reality_claude/dryrun-all/ANSWERS/45/ANSWER.md
+  s_911a0e0b72e3d4::t_e6d4f03bf5c4a4 1-91
+reality_claude/dryrun-all/ANSWERS/45/REASONING.md
+  s_911a0e0b72e3d4::t_917d076acf1344 1-75
+reality_claude/dryrun-all/ANSWERS/46/ANSWER.md
+  s_911a0e0b72e3d4::t_08ab63a5890db0 1-99
+reality_claude/dryrun-all/ANSWERS/46/REASONING.md
+  s_911a0e0b72e3d4::t_388a97f5e05073 1-79
+reality_claude/dryrun-all/ANSWERS/47/ANSWER.md
+  s_911a0e0b72e3d4::t_fdb7c1e7d2675e 1-87
+reality_claude/dryrun-all/ANSWERS/47/REASONING.md
+  s_911a0e0b72e3d4::t_3f230f75c67d0e 1-71
+reality_claude/dryrun-all/ANSWERS/48/ANSWER.md
+  s_911a0e0b72e3d4::t_98d3cff57c3e78 1-95
+reality_claude/dryrun-all/ANSWERS/48/REASONING.md
+  s_911a0e0b72e3d4::t_a904c76207a1d1 1-78
+reality_claude/dryrun-all/ANSWERS/49/ANSWER.md
+  s_911a0e0b72e3d4::t_f98eeb8bdb1308 1-74
+reality_claude/dryrun-all/ANSWERS/49/REASONING.md
+  s_911a0e0b72e3d4::t_edc8207ae1cb7a 1-62
+reality_claude/dryrun-all/ANSWERS/5/ANSWER.md
+  s_911a0e0b72e3d4::t_6fe85f38a02dc3 1-131
+reality_claude/dryrun-all/ANSWERS/5/REASONING.md
+  s_911a0e0b72e3d4::t_63535d8c4e1b1c 1-99
+reality_claude/dryrun-all/ANSWERS/50/ANSWER.md
+  s_911a0e0b72e3d4::t_352a9e9b575a76 1-112
+reality_claude/dryrun-all/ANSWERS/50/REASONING.md
+  s_911a0e0b72e3d4::t_972a73ccffc017 1-90
+reality_claude/dryrun-all/ANSWERS/6/ANSWER.md
+  s_911a0e0b72e3d4::t_e222d4b474f3c0 1-100
+reality_claude/dryrun-all/ANSWERS/6/REASONING.md
+  s_911a0e0b72e3d4::t_3a1790dd070fff 1-83
+reality_claude/dryrun-all/ANSWERS/7/ANSWER.md
+  s_911a0e0b72e3d4::t_0aa4a9fc298f2b 1-131
+reality_claude/dryrun-all/ANSWERS/7/REASONING.md
+  s_911a0e0b72e3d4::t_41b0f9561e483c 1-102
+reality_claude/dryrun-all/ANSWERS/8/ANSWER.md
+  s_911a0e0b72e3d4::t_da0bfd27d602ae 1-107
+reality_claude/dryrun-all/ANSWERS/8/REASONING.md
+  s_911a0e0b72e3d4::t_3c48604474c978 1-92
+reality_claude/dryrun-all/ANSWERS/9/ANSWER.md
+  s_911a0e0b72e3d4::t_fbb7709f54e1a3 1-36
+reality_claude/dryrun-all/ANSWERS/9/REASONING.md
+  s_911a0e0b72e3d4::t_bcc42c29225c50 1-36
+reality_claude/dryrun-all/ANSWERS/README.md
+  s_911a0e0b72e3d4::t_dc3544ae3d0898 1-56
+reality_claude/dryrun-all/ANSWERS/run-log.json
+  s_911a0e0b72e3d4::t_b4f486e24b7499 1-502
+skills/escalation-and-handover/SKILL.md
+  s_911a0e0b72e3d4::t_3666b4ea3a6014 26
+skills/graph-conventions/SKILL.md
+  s_911a0e0b72e3d4::t_c3b78c729039fd 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "901dc6b7e75d1df402f5f1bf9445d64081c2426c",
+  "prompts": {},
+  "humans": {
+    "h_9b5902752e9133": {
+      "author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_911a0e0b72e3d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a20b19fa-0f41-47fc-b508-9b5ef17c73db",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
