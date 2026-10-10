@@ -94,6 +94,43 @@ def test_run_creates_session_with_mcp_grant_and_relays_events(agent, anthropic):
     assert synced["status"] == "done"  # idle with no unfinished plan
 
 
+@pytest.mark.parametrize("previous_reply", [False, True])
+@pytest.mark.parametrize("has_plan", [False, True])
+def test_idle_run_waits_for_pending_message_before_settling(
+    agent, anthropic, monkeypatch, previous_reply, has_plan
+):
+    run = agent.post("/internal/runs", json={"goal": "Call a plumber"}).json()
+    run_id, store = run["id"], agent.app.state.store
+    if has_plan:
+        TOOLS["create_plan"]["handler"](
+            agent.app, run_id, {"goal": "Call a plumber", "steps": [{"title": "Place call"}]}
+        )
+    events = []
+    if previous_reply:
+        events.append({"id": "reply-1", "type": "agent.message", "content": []})
+    events.append({"id": "pending", "type": "user.message", "content": []})
+
+    def handler(request):
+        if request.url.path.endswith("/events"):
+            return httpx.Response(200, json={"data": events, "next_page": None})
+        return httpx.Response(200, json={"status": "idle"})
+
+    monkeypatch.setattr(managed, "http", httpx.Client(transport=httpx.MockTransport(handler)))
+    for _ in range(2):
+        response = agent.post(f"/internal/runs/{run_id}/sync")
+        assert response.status_code == 200
+        assert response.json()["status"] == "running"
+        state = store.snapshot()
+        assert state["mcp_sessions"][run_id]["revoked"] is False
+        assert not state["wakeups"]
+
+    events.append({"id": "reply-2", "type": "agent.message", "content": []})
+    response = agent.post(f"/internal/runs/{run_id}/sync")
+    assert response.status_code == 200
+    assert response.json()["status"] == ("sleeping" if has_plan else "done")
+    assert store.snapshot()["mcp_sessions"][run_id]["revoked"] is (not has_plan)
+
+
 def test_events_wake_owning_run_or_start_new_one(agent, anthropic, monkeypatch):
     monkeypatch.setenv("AGENT_MAX_SESSIONS", "1")
     first = agent.post(
