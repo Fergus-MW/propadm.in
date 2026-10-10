@@ -94,6 +94,16 @@ non-secret ids (`MANAGED_AGENT_ID`, `MANAGED_ADMIN_AGENT_ID`, `MANAGED_ENVIRONME
 providers answer 503. Cloud Scheduler sweeps agent wake-ups every minute and
 runs a nightly full edge recompute.
 
+Production ingestion uses Claude Haiku 5.5 by default in `api`, `ingestion`,
+`email` and `voice`, including email attachments and call transcripts. Each of
+these services receives the Anthropic secret; `secret_versions` must contain
+`anthropic-api-key`. Override `PIPELINE_MODEL` in `service_environment` when
+changing models. Local development keeps its credential-free extractor.
+Generated ledger statements use deterministic extraction of their supplied
+records. Verify production jobs report `extraction_provider=claude` and the
+configured model as `extractor_version`; setting a model alone does not enable
+Claude extraction.
+
 For production email, `secret_versions` must include both `agentmail-api-key`
 and `agentmail-webhook-secret`. Terraform removes manually attached Cloud Run
 secret references when they are absent from this map, causing inbound webhooks

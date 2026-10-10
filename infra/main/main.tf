@@ -18,8 +18,8 @@ locals {
     ingestion = ["anthropic-api-key"]
     rules     = ["anthropic-api-key"]
     agent     = ["anthropic-api-key"]
-    voice     = ["elevenlabs-api-key", "elevenlabs-webhook-secret", "elevenlabs-tool-secret"]
-    email     = ["agentmail-api-key", "agentmail-webhook-secret"]
+    voice     = ["anthropic-api-key", "elevenlabs-api-key", "elevenlabs-webhook-secret", "elevenlabs-tool-secret"]
+    email     = ["anthropic-api-key", "agentmail-api-key", "agentmail-webhook-secret"]
     browser   = ["anthropic-api-key", "browserbase-api-key"]
   }
   secret_access = merge(
@@ -47,6 +47,12 @@ locals {
         INGESTION_SERVICE_URL           = local.urls["ingestion"]
       },
       local.analytics,
+      # These services ingest documents, email bodies/attachments and call transcripts.
+      # Local development retains the credential-free extractor.
+      contains(["api", "ingestion", "email", "voice"], name) ? {
+        EXTRACTION_PROVIDER = "claude"
+        PIPELINE_MODEL      = "claude-haiku-5-5"
+      } : {},
       lookup(var.service_environment, name, {}),
     ) },
     { admin-panel = merge({ API_URL = local.urls["api"] }, local.analytics, lookup(var.service_environment, "admin-panel", {})) },
