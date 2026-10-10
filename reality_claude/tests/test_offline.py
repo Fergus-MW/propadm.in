@@ -11,7 +11,7 @@ from reality_claude import report, stack
 from reality_claude.intake import discover, read_case
 from services.agent.app import managed
 
-CASES = Path(__file__).resolve().parents[2] / "evals_claude/cases/property-management"
+CASES = Path(__file__).resolve().parents[2] / "Property Management"
 
 
 def test_discover_numbers_answers_from_folder_names(tmp_path):

@@ -1,0 +1,302 @@
+[
+ {
+  "answer_id": "1",
+  "title": "Bathroom leak and wall repair",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 86.4,
+  "staff": true,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "2",
+  "title": "Gas record and boiler visit",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 94.7,
+  "staff": true,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "3",
+  "title": "Bathroom and kitchen maintenance",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 97.3,
+  "staff": false,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "4",
+  "title": "Front entrance lock report",
+  "execution": "fallback_completed",
+  "mode": "fallback",
+  "seconds": 33.8,
+  "staff": false,
+  "actions": 9,
+  "failures": 0
+ },
+ {
+  "answer_id": "5",
+  "title": "Heating repair invoice and payment details",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 103.3,
+  "staff": true,
+  "actions": 10,
+  "failures": 4
+ },
+ {
+  "answer_id": "6",
+  "title": "Solar generation readings",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 140.6,
+  "staff": true,
+  "actions": 5,
+  "failures": 1
+ },
+ {
+  "answer_id": "7",
+  "title": "Television, bedroom light and door handle",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 119.2,
+  "staff": false,
+  "actions": 10,
+  "failures": 0
+ },
+ {
+  "answer_id": "8",
+  "title": "Water ingress affecting two flats",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 113.3,
+  "staff": true,
+  "actions": 8,
+  "failures": 0
+ },
+ {
+  "answer_id": "9",
+  "title": "Bedroom Window Maintenance Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 55.5,
+  "staff": false,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "10",
+  "title": "Kitchen cabinet maintenance request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 103.5,
+  "staff": true,
+  "actions": 7,
+  "failures": 1
+ },
+ {
+  "answer_id": "11",
+  "title": "Kitchen ceiling leak inspection at 16 Brindlewick Mews",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 116.8,
+  "staff": true,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "12",
+  "title": "Lock Maintenance Request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 81.4,
+  "staff": false,
+  "actions": 7,
+  "failures": 1
+ },
+ {
+  "answer_id": "13",
+  "title": "Kitchen glazing maintenance request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 64.3,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "14",
+  "title": "Heating service request at 7 Mallowmere Walk",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 109.0,
+  "staff": true,
+  "actions": 10,
+  "failures": 0
+ },
+ {
+  "answer_id": "15",
+  "title": "Vacant Property Preparation",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 76.9,
+  "staff": true,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "16",
+  "title": "Smoke alarm maintenance request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 83.0,
+  "staff": true,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "17",
+  "title": "Flat entrance door maintenance request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 85.3,
+  "staff": false,
+  "actions": 6,
+  "failures": 1
+ },
+ {
+  "answer_id": "18",
+  "title": "Kitchen maintenance report",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 87.1,
+  "staff": true,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "19",
+  "title": "Move-out maintenance at 18 Brindle Row",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 105.3,
+  "staff": true,
+  "actions": 9,
+  "failures": 3
+ },
+ {
+  "answer_id": "20",
+  "title": "Kitchen socket maintenance request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 108.0,
+  "staff": true,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "21",
+  "title": "Hot-water service report",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 87.6,
+  "staff": false,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "22",
+  "title": "Washer-dryer maintenance and replacement update",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 161.0,
+  "staff": false,
+  "actions": 6,
+  "failures": 1
+ },
+ {
+  "answer_id": "23",
+  "title": "Heating maintenance at 7 Larkspur Fold",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 120.4,
+  "staff": true,
+  "actions": 12,
+  "failures": 5
+ },
+ {
+  "answer_id": "24",
+  "title": "End-of-occupancy property service request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 181.5,
+  "staff": true,
+  "actions": 8,
+  "failures": 1
+ },
+ {
+  "answer_id": "25",
+  "title": "Kitchen tap maintenance request",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 75.0,
+  "staff": false,
+  "actions": 5,
+  "failures": 0
+ },
+ {
+  "answer_id": "26",
+  "title": "Moisture inspection and repair coordination",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 102.9,
+  "staff": true,
+  "actions": 7,
+  "failures": 0
+ },
+ {
+  "answer_id": "27",
+  "title": "Move-out maintenance at 46 Fernwick Lane",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 94.9,
+  "staff": false,
+  "actions": 6,
+  "failures": 1
+ },
+ {
+  "answer_id": "28",
+  "title": "Move-out maintenance request",
+  "execution": "done",
+  "mode": "live",
+  "seconds": 60.3,
+  "staff": true,
+  "actions": 3,
+  "failures": 0
+ },
+ {
+  "answer_id": "29",
+  "title": "Heating-system visit enquiry",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 89.6,
+  "staff": true,
+  "actions": 6,
+  "failures": 0
+ },
+ {
+  "answer_id": "30",
+  "title": "Maintenance report at 8 Brindlefern Walk",
+  "execution": "sleeping",
+  "mode": "live",
+  "seconds": 84.6,
+  "staff": false,
+  "actions": 6,
+  "failures": 0
+ }
+]

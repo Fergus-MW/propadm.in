@@ -1,0 +1,33 @@
+30 cases to run from cases_claude/reality
+ANTHROPIC_API_KEY is set and takes precedence over the SDK's profile / federation auto-discovery; unset ANTHROPIC_API_KEY to use the auto-discovered credential.
+Tunnel ready: https://attorney-picnic-analyst-dis.trycloudflare.com
+case    4 fallback_completed   fallback staff=False actions= 9 33.8s
+case    9 sleeping             live     staff=False actions= 3 55.5s
+case    1 sleeping             live     staff=True  actions= 7 86.4s
+case    2 sleeping             live     staff=True  actions= 7 94.7s
+case    3 sleeping             live     staff=False actions= 6 97.3s
+case    5 sleeping             live     staff=True  actions=10 103.3s
+case   10 sleeping             live     staff=True  actions= 7 103.5s
+case    8 sleeping             live     staff=True  actions= 8 113.3s
+case    7 sleeping             live     staff=False actions=10 119.2s
+case   12 sleeping             live     staff=False actions= 7 81.4s
+case    6 sleeping             live     staff=True  actions= 5 140.6s
+case   11 sleeping             live     staff=True  actions= 7 116.8s
+case   13 sleeping             live     staff=False actions= 5 64.3s
+case   15 sleeping             live     staff=True  actions= 5 76.9s
+case   16 sleeping             live     staff=True  actions= 5 83.0s
+case   17 sleeping             live     staff=False actions= 6 85.3s
+case   18 sleeping             live     staff=True  actions= 7 87.1s
+case   14 sleeping             live     staff=True  actions=10 109.0s
+case   19 sleeping             live     staff=True  actions= 9 105.3s
+case   21 sleeping             live     staff=False actions= 6 87.6s
+case   20 sleeping             live     staff=True  actions= 7 108.0s
+case   25 sleeping             live     staff=False actions= 5 75.0s
+case   28 done                 live     staff=True  actions= 3 60.3s
+case   23 sleeping             live     staff=True  actions=12 120.4s
+case   26 sleeping             live     staff=True  actions= 7 102.9s
+case   27 sleeping             live     staff=False actions= 6 94.9s
+case   22 sleeping             live     staff=False actions= 6 161.0s
+case   30 sleeping             live     staff=False actions= 6 84.6s
+case   29 sleeping             live     staff=True  actions= 6 89.6s
+case   24 sleeping             live     staff=True  actions= 8 181.5s
