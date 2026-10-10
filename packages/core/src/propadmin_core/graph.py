@@ -8,6 +8,7 @@ from .embeddings import EmbeddingService
 from .graph_relationships import validate_relationship
 from .registry import default_types, hard_keys, normalise, validate_fields
 from .store import ConflictError, identifier, now, publish
+from .ticket_completion import COMPLETION_FIELDS, validate_completion
 
 
 def reject_derived_fields(state, type_name, fields):
@@ -87,6 +88,7 @@ def create_in_state(state, payload, actor="admin", reason="", embedder=None, *, 
     if not isinstance(payload.get("name"), str) or not payload["name"].strip():
         raise ValueError("Entity name is required")
     fields = validate_fields(state, type_name, payload.get("fields", {}), allow_read_only=ledger)
+    validate_completion(type_name, fields)
     if type_name == "property":
         for key in ("tenant_balance_minor", "landlord_balance_minor", "deposit_held_minor"):
             fields.setdefault(key, 0)
@@ -192,6 +194,7 @@ def update_in_state(state, entity_id, payload, actor="admin", reason="", embedde
         {**current["fields"], **payload.get("fields", {})},
         allow_read_only=True,
     )
+    validate_completion(current["type"], updated["fields"])
     if actor == "admin" and "description" in payload:
         updated["description_pinned"] = True
     if "evidence" in payload:
@@ -311,6 +314,7 @@ class GraphService:
                         {repr(v): v for v in target["fields"][key] + value}.values()
                     )
             target["external_ids"] = {**source["external_ids"], **target["external_ids"]}
+            validate_completion(target["type"], target["fields"])
             target["aliases"] = list(
                 dict.fromkeys(target["aliases"] + source["aliases"] + [source["name"]])
             )
@@ -472,6 +476,10 @@ class GraphService:
                 spec.setdefault("required", False)
                 spec.setdefault("unique_key", False)
             previous = state["entity_types"].get(key)
+            if key == "ticket":
+                fixed = default_types()["ticket"]["fields"]
+                if any(fields.get(name) != fixed[name] for name in COMPLETION_FIELDS):
+                    raise ValueError("Ticket completion fields are fixed and must remain embedded text")
             if key in {"property", "transaction", "service_provider", "service_offering", "quote"}:
                 fixed = default_types()[key]
                 if fields != fixed["fields"] or payload.get("composite_keys", []) != fixed.get(

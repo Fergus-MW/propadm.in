@@ -60,9 +60,42 @@ undo_v1_actions__action_id__undo_post: {
         };
     };
 };
-list_runs_v1_agent_runs_get: {
+admin_chat_v1_admin_chat_post: {
     parameters: {
         query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["ChatMessage"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+list_runs_v1_agent_runs_get: {
+    parameters: {
+        query?: {
+            kind?: string | null;
+        };
         header?: never;
         path?: never;
         cookie?: never;
@@ -75,6 +108,14 @@ list_runs_v1_agent_runs_get: {
             };
             content: {
                 "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
             };
         };
     };
@@ -626,35 +667,6 @@ edit_rule_v1_edge_rules__rule_id__patch: {
     };
 };
 preview_rule_v1_edge_rules__rule_id__preview_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            rule_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-recompute_rule_v1_edge_rules__rule_id__recompute_post: {
     parameters: {
         query?: never;
         header?: never;

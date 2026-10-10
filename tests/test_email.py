@@ -32,6 +32,8 @@ def service(monkeypatch, tmp_path):
         calls.append((method, url, json))
         if url.endswith("/messages/send"):
             body = {"message_id": "<out-1@withproperly.com>", "thread_id": "thd_out"}
+        elif url.endswith("/reply"):
+            body = {"message_id": "<reply-1@withproperly.com>", "thread_id": "thd_out"}
         elif url.startswith("http://agent.test"):
             body = {"run_id": "run_1", "action": "started"}
         else:
@@ -151,8 +153,59 @@ def test_webhook_verifies_ingests_once_and_notifies_agent(service, monkeypatch):
     assert len(agent_calls) == 1
     event = agent_calls[0][2]
     assert event["kind"] == "email.received"
-    assert event["subjects"][0] == "thd_in" and email["id"] in event["subjects"]
+    # Sharing a sender or the operations mailbox must not join unrelated agent runs.
+    assert event["subjects"] == ["thd_in", email["id"]]
 
     again = service.post("/webhooks/agentmail", content=body, headers=headers)
     assert again.json() == {"email_id": email["id"], "duplicate": True}
     assert len([c for c in service.calls if c[1].startswith("http://agent.test")]) == 1
+
+
+@pytest.mark.parametrize("changed_thread", [False, True])
+def test_supplier_reply_inherits_ticket_and_routes_using_conversation_evidence(
+    service, monkeypatch, changed_thread
+):
+    monkeypatch.setenv("AGENTMAIL_API_KEY", "key")
+    monkeypatch.setenv("AGENTMAIL_WEBHOOK_SECRET", SECRET)
+    monkeypatch.setenv("AGENT_SERVICE_URL", "http://agent.test")
+    ticket = "ticket:prop-1042"
+    sent = service.post("/internal/send", headers=INTERNAL, json={
+        "to": ["plumber@example.net"], "subject": "Quote request", "body": "Earliest attendance?",
+        "entity_ids": [ticket], "run_id": "repair-run",
+    }).json()
+    incoming = {**INBOUND, "message": {
+        **INBOUND["message"], "from": "Plumber <plumber@example.net>",
+        "thread_id": "changed-thread" if changed_thread else sent["thread_id"],
+        "in_reply_to": sent["message_id"], "references": [sent["message_id"]],
+        "text": "We can attend at 14:00; quote £95 including VAT.",
+    }}
+    body, headers = signed(incoming)
+    response = service.post("/webhooks/agentmail", content=body, headers=headers)
+    assert response.status_code == 200, response.text
+    received = response.json()["email_id"]
+    state = service.app.state.store.snapshot()
+    assert any(e["source"] == received and e["target"] == ticket and e["relation"] == "about"
+               for e in state["edges"].values())
+    event = next(c[2] for c in service.calls if c[1] == "http://agent.test/internal/events")
+    assert sent["thread_id"] in event["subjects"] and sent["email_id"] in event["subjects"]
+
+    # Continuing the supplier conversation keeps the ticket link without model input.
+    followup = service.post("/internal/reply", headers=INTERNAL, json={
+        "email_id": received, "body": "Please confirm the attendance window.",
+    })
+    assert followup.status_code == 200, followup.text
+    assert any(e["source"] == followup.json()["email_id"] and e["target"] == ticket
+               and e["relation"] == "about"
+               for e in service.app.state.store.snapshot()["edges"].values())
+
+    # Same sender and inbox, but different conversation: no task/ticket inheritance.
+    unrelated = {**incoming, "message": {
+        **incoming["message"], "message_id": "<unrelated@example.net>",
+        "thread_id": "unrelated-thread", "in_reply_to": None, "references": [],
+    }}
+    body, headers = signed(unrelated)
+    separate = service.post("/webhooks/agentmail", content=body, headers=headers).json()
+    event = [c[2] for c in service.calls if c[1] == "http://agent.test/internal/events"][-1]
+    assert event["subjects"] == ["unrelated-thread", separate["email_id"]]
+    assert not any(e["source"] == separate["email_id"] and e["relation"] == "about"
+                   for e in service.app.state.store.snapshot()["edges"].values())

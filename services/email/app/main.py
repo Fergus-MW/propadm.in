@@ -19,6 +19,7 @@ from propadmin_core.graph import add_edge
 from propadmin_core.store import now
 from propadmin_runtime import create_app
 from propadmin_runtime.auth import require_internal
+from propadmin_runtime.email_threads import conversation_context
 from propadmin_runtime.services import call_service
 
 AGENTMAIL_URL = os.getenv("AGENTMAIL_BASE_URL", "https://api.agentmail.to/v0").rstrip("/")
@@ -239,6 +240,8 @@ def build(app):
         entity_ids = payload.get("entity_ids") or []
         check_entities(app, entity_ids)
         prior = original["fields"]
+        _, related_ids = conversation_context(app.state.store.snapshot(), prior)
+        entity_ids = sorted(set(entity_ids) | set(related_ids))
         inbox, reply_all = prior["mailbox"], bool(payload.get("reply_all"))
         sent = agentmail(
             "POST",
@@ -303,7 +306,8 @@ def build(app):
         if message.get("in_reply_to"):
             fields["in_reply_to"] = message["in_reply_to"]
         # ponytail: ingested in-process; Pub/Sub fan-out to the ingestion service comes with cloud.
-        email, job = record_email(app, fields)
+        prior_subjects, entity_ids = conversation_context(app.state.store.snapshot(), fields)
+        email, job = record_email(app, fields, entity_ids)
 
         def link(state):
             for attachment in attachments:
@@ -318,7 +322,9 @@ def build(app):
                 "/internal/events",
                 {
                     "kind": "email.received",
-                    "subjects": list(dict.fromkeys([fields["thread_id"], *job["entities"]])),
+                    # People in the message are context, not conversation ownership.
+                    # In particular, the shared inbox recipient belongs to every thread.
+                    "subjects": list(dict.fromkeys([fields["thread_id"], email["id"], *prior_subjects])),
                     "summary": f"Email from {address}: {fields['subject']}",
                     "data": {"email_id": email["id"], "message_id": fields["message_id"],
                              "thread_id": fields["thread_id"], "from": address,

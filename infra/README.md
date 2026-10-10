@@ -88,11 +88,18 @@ terraform -chdir=infra/main apply
 Add provider secret versions (`anthropic-api-key`, `elevenlabs-api-key`,
 `elevenlabs-webhook-secret`, `agentmail-api-key`, `agentmail-webhook-secret`,
 `browserbase-api-key`) to Secret Manager and list them in `secret_versions`;
-non-secret ids (`MANAGED_AGENT_ID`, `MANAGED_ENVIRONMENT_ID`,
+non-secret ids (`MANAGED_AGENT_ID`, `MANAGED_ADMIN_AGENT_ID`, `MANAGED_ENVIRONMENT_ID`,
 `ELEVENLABS_AGENT_ID`, `ELEVENLABS_PHONE_NUMBER_ID`, `BROWSERBASE_PROJECT_ID`,
 `PIPELINE_MODEL`, `BROWSER_MODEL`) go in `service_environment`. Unconfigured
 providers answer 503. Cloud Scheduler sweeps agent wake-ups every minute and
 runs a nightly full edge recompute.
+
+For production email, `secret_versions` must include both `agentmail-api-key`
+and `agentmail-webhook-secret`. Terraform removes manually attached Cloud Run
+secret references when they are absent from this map, causing inbound webhooks
+to return 503 and preventing outbound replies. Record provider secret versions
+in `terraform.tfvars` when configuring them, even if the first attachment was
+made with `gcloud`.
 
 Secrets are mounted only into their consuming services. The API/ingestion
 accounts may invoke Vertex models, and ingestion can write raw objects. Delivery
@@ -140,3 +147,25 @@ pnpm install --frozen-lockfile
 
 The YAML lockfile uses grouped JSON, which is valid YAML. Compaction verifies
 semantic equality before saving; neither lockfile loses dependency metadata.
+
+## PostHog
+
+Set `POSTHOG_PROJECT_TOKEN` (a public `phc_` ingestion token) and `POSTHOG_HOST`
+in `.env` for `make dev` and Compose. Empty tokens disable analytics and need no
+cloud credentials. For Cloud Run, set `posthog_project_token` and `posthog_host`
+in `infra/main/terraform.tfvars`; Terraform passes them to every service and the
+landing page. Both sites fetch public config at runtime, so no build-time token
+is required. Never put a personal `phx_` API key in application config.
+
+Browser events have a `surface` of `landing` or `admin`. Page views, landing
+signup outcomes and admin sign-ins/outs are explicit events; form values are not
+recorded, query strings/fragments are removed, and session replay is disabled.
+Python services export native OTel spans to `/i/v1/traces`. Agent runs and tools
+also emit `$ai_trace` and `$ai_span` events with the same trace/span/parent IDs,
+run/session IDs, duration, redacted inputs/outputs and errors. Cloud Run requests
+flush queues before the final response body and services flush on shutdown.
+
+Claude Managed Agents hosts the model loop. This integration records the local
+orchestrator and MCP tools; it cannot report hidden provider-side generations,
+token counts or costs that Anthropic does not return. Existing Cloud Logging
+evidence remains available.

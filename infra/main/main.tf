@@ -9,6 +9,10 @@ locals {
   python = ["api", "ingestion", "rules", "agent", "voice", "email", "browser"]
   names  = toset(concat(["admin-panel"], local.python))
   core   = ["admin-password", "internal-service-token", "token-secret"]
+  analytics = {
+    POSTHOG_PROJECT_TOKEN = var.posthog_project_token
+    POSTHOG_HOST          = var.posthog_host
+  }
   provider = {
     api       = ["anthropic-api-key"]
     ingestion = ["anthropic-api-key"]
@@ -42,9 +46,10 @@ locals {
         BROWSER_SERVICE_URL             = local.urls["browser"]
         INGESTION_SERVICE_URL           = local.urls["ingestion"]
       },
+      local.analytics,
       lookup(var.service_environment, name, {}),
     ) },
-    { admin-panel = merge({ API_URL = local.urls["api"] }, lookup(var.service_environment, "admin-panel", {})) },
+    { admin-panel = merge({ API_URL = local.urls["api"] }, local.analytics, lookup(var.service_environment, "admin-panel", {})) },
   )
 }
 resource "google_service_account" "services" {

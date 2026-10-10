@@ -183,3 +183,21 @@ it("preserves authenticated statement downloads and their filenames", async () =
   );
   expect(await result.text()).toBe("%PDF-1.4");
 });
+
+it.each(["answer.md", "reasoning.md"])("preserves ticket Markdown download %s", async (filename) => {
+  const markdown = "# Outcome\n\nRecorded cost: **£95**.\n";
+  const fetch = vi.fn().mockResolvedValue(new Response(markdown, {
+    headers: {
+      "Content-Type": "text/markdown; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  }));
+  vi.stubGlobal("fetch", fetch);
+  const result = await GET(new NextRequest(
+    `http://localhost:3000/api/backend/v1/tickets/ticket%3Aquery/exports/${filename}`,
+  ), { params: Promise.resolve({ path: ["v1", "tickets", "ticket:query", "exports", filename] }) });
+  expect(fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer test-session-token");
+  expect(result.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+  expect(result.headers.get("content-disposition")).toBe(`attachment; filename="${filename}"`);
+  expect(await result.text()).toBe(markdown);
+});

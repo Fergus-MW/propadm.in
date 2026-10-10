@@ -62,7 +62,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
                 scheduler.cancel()
                 with suppress(asyncio.CancelledError):
                     await scheduler
-            app.state.telemetry.provider.shutdown()
+            await asyncio.to_thread(app.state.telemetry.shutdown)
 
     app = FastAPI(title=f"Properly {service}", version="0.1.0", lifespan=lifespan)
     app.state.telemetry = Telemetry(service)
@@ -120,6 +120,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
             routes_graph,
             routes_ledger,
             routes_ops,
+            routes_tickets,
             routes_voice,
         )
 
@@ -127,6 +128,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
             routes_graph,
             routes_ledger,
             routes_ops,
+            routes_tickets,
             routes_agent,
             routes_voice,
             routes_email,

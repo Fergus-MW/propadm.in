@@ -271,6 +271,19 @@ Outbound
 2. No draft or approval step: the message goes out immediately.
 3. On send, email sends via AgentMail and records the message and thread ids.
 4. The sent message becomes an email entity and a source_file, chunked and linked to the recipients, so the graph knows what we promised.
+5. Every successful agent send/reply attaches its thread and email ids to the originating
+   run, including separate supplier conversations. Supplier replies wake that same task
+   and inherit the original email's ticket/provider links, including replies whose thread
+   id changes but whose reply headers reference an earlier message.
+Maintenance resolution
+- Acknowledge the tenant first and give a next update deadline before contacting suppliers.
+- Request quotes and earliest attendance from 2-3 qualified suppliers in separate threads
+  before waiting. Optimise for earliest viable resolution within sourced spending limits;
+  urgent repairs need not wait for every quote. Email response speed is not attendance time.
+- Confirm booking/access, communicate verified timelines and delays, chase missing responses
+  and honour update deadlines while supplier conversations continue in the same run.
+- Keep the task open until completion is evidenced and a final reply reaches the tenant.
+  Quote acceptance and booking do not resolve the issue. Follow resolve-maintenance-email.
 Inbound
 1. AgentMail webhook → email service → Pub/Sub → ingestion, same pipeline as the synthetic environment's emails (sender resolved to a canonical person by address).
 2. If the thread belongs to an open agent task, the agent service resumes or starts a Managed Agents session with the new message and the entity context; otherwise it is ingested only.
@@ -383,7 +396,17 @@ A ticket is one maintenance issue (a leak, a broken boiler, damp, a faulty lift)
 | description | text | yes | Tenant's account plus extracted detail |
 | access_instructions | text | yes | Keys, entry times, pets |
 | resolution | text | yes | What was done |
+| final_answer | text (Markdown) | yes | Required on completion: answer/query result or execution outcome, including why an instruction was not executed |
+| reasoning | text (Markdown) | yes | Required on completion: detailed evidence-based explanation covering all observable steps, sources, actions, outcomes, checks, failures, skipped actions and limitations |
 | notes | array<text> | yes | Progress notes from agents and admins |
+
+Tickets entering `resolved` or `closed` must have non-empty `final_answer` and
+`reasoning` fields. The reasoning explains how recorded evidence supports the
+outcome; it does not contain hidden model deliberations. The ticket detail page
+offers separate authenticated Markdown downloads named `answer.md` and
+`reasoning.md`. Exports preserve the full stored Markdown, including Unicode and
+line breaks. Historical completed tickets preserve their recorded resolution
+and explicitly identify missing original explanations rather than inventing them.
 
 Default edges: ticket ->reported_by-> person (tenant), ticket ->assigned_to-> company (contractor) or person, ticket ->for-> company (managing agent or landlord's firm, when known), person ->works_at-> company, ticket ->evidenced_by-> chunk (photos, documents), call ->about-> ticket from each related call (see Calls), and `email ->about-> ticket` from each related email (see Emails). Default edge rules: recurring_issue between tickets at a similar location within 90 days, and similar_to by description similarity.
 How tickets are created and updated: ticket records in the synthetic environment seed them directly; ingestion links a call or email to an open ticket (ticket ref in the text, else same reporter or location + similar description) or opens a new one; the sandboxed agent can create_ticket, update_ticket, book a contractor by email or phone, and call the tenant back with a visit time.

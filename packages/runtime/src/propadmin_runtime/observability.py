@@ -1,11 +1,12 @@
-"""OTel spans and execution evidence as Cloud Run structured stdout logs.
+"""OTel spans and execution evidence as Cloud Run logs, with optional PostHog export.
 
-No background network queue: Cloud Run collects each flushed JSON line. Full payloads
-are separate from OTel's bounded attributes. ContextVars isolate concurrent requests.
+Cloud Run collects each flushed JSON line. PostHog queues flush before response completion.
+Full payloads are separate from OTel's bounded attributes. ContextVars isolate requests.
 """
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -27,6 +28,8 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, Sp
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.trace import NonRecordingSpan, SpanContext, SpanKind, StatusCode, TraceFlags
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+from .posthog import PostHogTelemetry
 
 SCHEMA = "propadmin.evidence.v1"
 IDENTITY = ContextVar("propadmin_evidence_identity", default={})
@@ -174,6 +177,7 @@ class Telemetry:
         # Per-app provider avoids global-provider replacement and duplicate instrumentation.
         self.provider = TracerProvider(resource=Resource.create(resource), sampler=ALWAYS_ON)
         self.provider.add_span_processor(SimpleSpanProcessor(LoggingSpanExporter(self)))
+        self.posthog = PostHogTelemetry(service, self.provider)
         self.tracer = self.provider.get_tracer("propadmin.runtime", "1.0.0")
 
     def _write(self, record):
@@ -229,6 +233,7 @@ class Telemetry:
             record["logging.googleapis.com/spanId"] = record.get("span_id", "")
             record["logging.googleapis.com/trace_sampled"] = True
         content = encode(record["payload"])
+        self.posthog.record(record)
         if len(content) > 128_000:
             ref = {"sha256": hashlib.sha256(content).hexdigest(), "bytes": len(content)}
             if self.artifacts:
@@ -294,6 +299,7 @@ class Telemetry:
                         "stacktrace": "".join(traceback.format_exception(exc)),
                     }
                     span.set_status(StatusCode.ERROR, redact(str(exc)))
+                    outcome["error"] = error
                     self.emit(
                         "operation.finished",
                         {"name": name, "error": error},
@@ -310,6 +316,10 @@ class Telemetry:
                         operation_id=operation_id,
                         severity="ERROR" if outcome.get("error") else "INFO",
                     )
+                finally:
+                    self.posthog.operation(
+                        span, name, redact(inputs), redact(outcome), dict(IDENTITY.get())
+                    )
         finally:
             ACTIVE_TELEMETRY.reset(active_token)
             IDENTITY.reset(token)
@@ -318,6 +328,15 @@ class Telemetry:
         return self.operation(
             name, inputs or {}, identity=run_identity(run), context=run_context(run), **kwargs
         )
+
+    def flush(self):
+        if self.posthog.client:
+            self.provider.force_flush(timeout_millis=3000)
+            self.posthog.flush()
+
+    def shutdown(self):
+        self.provider.shutdown()
+        self.posthog.shutdown()
 
 
 def observed_run(function):
@@ -348,6 +367,7 @@ class TelemetryMiddleware:
         if scope["type"] != "http" or scope["path"] == "/healthz":
             return await self.app(scope, receive, send)
         headers = {k.decode().lower(): v.decode() for k, v in scope["headers"]}
+        final_body = None
         context = incoming_context(headers)
         identity = {
             k: headers[f"x-propadmin-{k.replace('_', '-')}"][:200]
@@ -365,6 +385,10 @@ class TelemetryMiddleware:
         ) as outcome:
 
             async def respond(message):
+                nonlocal final_body
+                if message["type"] == "http.response.body" and not message.get("more_body", False):
+                    final_body = message
+                    return
                 if message["type"] == "http.response.start":
                     span = trace.get_current_span()
                     span.set_attribute("http.response.status_code", message["status"])
@@ -378,3 +402,8 @@ class TelemetryMiddleware:
                 await send(message)
 
             await self.app(scope, receive, respond)
+        # Flush while Cloud Run still allocates request CPU, before the last body.
+        if self.telemetry.posthog.client:
+            await asyncio.to_thread(self.telemetry.flush)
+        if final_body is not None:
+            await send(final_body)

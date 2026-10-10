@@ -25,6 +25,7 @@ import {
 } from "@/lib/api";
 import { useAction, useData, useItems } from "@/lib/hooks";
 import { editableFields, entityHref } from "@/lib/property";
+import { TicketCompletion, TicketCompletionEditor } from "./ticket-completion";
 export function Entities({ tickets = false }: { tickets?: boolean }) {
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
@@ -252,11 +253,14 @@ export function EntityDetail({ id }: { id: string }) {
         />
       )}
       <State error={action.error} />
+      {entity.type === "ticket" && <TicketCompletion entity={entity} />}
       <div className="two-columns">
         <div>
           <Section title="Details">
             <dl className="fact-grid">
-              {Object.entries(entity.fields ?? {}).map(([key, value]) => (
+              {Object.entries(entity.fields ?? {}).filter(([key]) =>
+                entity.type !== "ticket" || !["final_answer", "reasoning"].includes(key),
+              ).map(([key, value]) => (
                 <div className="fact" key={key}>
                   <dt>{key.replaceAll("_", " ")}</dt>
                   <dd>{str(value)}</dd>
@@ -381,8 +385,15 @@ function EntityEditor({
   const [name, setName] = useState(entity.name);
   const [description, setDescription] = useState(entity.description);
   const [fields, setFields] = useState(
-    JSON.stringify(editableFields(entity.fields, {}), null, 2),
+    JSON.stringify(editableFields(Object.fromEntries(
+      Object.entries(entity.fields).filter(([key]) =>
+        entity.type !== "ticket" || !["status", "final_answer", "reasoning"].includes(key),
+      ),
+    ), {}), null, 2),
   );
+  const [status, setStatus] = useState(String(entity.fields.status ?? ""));
+  const [finalAnswer, setFinalAnswer] = useState(String(entity.fields.final_answer ?? ""));
+  const [reasoning, setReasoning] = useState(String(entity.fields.reasoning ?? ""));
   const [reason, setReason] = useState("");
   const [error, setError] = useState<Error | null>(null);
   const action = useAction();
@@ -406,7 +417,9 @@ function EntityEditor({
                 body: {
                   name,
                   description,
-                  fields: editableFields(parsed, object(schema?.fields)),
+                  fields: editableFields({ ...parsed, ...(entity.type === "ticket" ? {
+                    ...(status ? { status } : {}), final_answer: finalAnswer, reasoning,
+                  } : {}) }, object(schema?.fields)),
                   version: entity.version,
                   reason,
                 },
@@ -431,6 +444,12 @@ function EntityEditor({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+        {entity.type === "ticket" && (
+          <TicketCompletionEditor
+            status={status} finalAnswer={finalAnswer} reasoning={reasoning}
+            onStatus={setStatus} onAnswer={setFinalAnswer} onReasoning={setReasoning}
+          />
+        )}
         <FormTextarea
           label="Typed fields (JSON)"
           rows={8}

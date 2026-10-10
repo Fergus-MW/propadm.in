@@ -206,9 +206,10 @@
   };
   loop();
 
-  /* Signup: posts to the landing server, which saves it to a CSV */
+  /* Signup: posts to the landing server, which saves it and pings the team chat */
   const form = $("#signup");
   const input = $("#email");
+  const fields = [$("#signup-name"), $("#signup-company"), input];
   const button = form.querySelector("button");
   const burst = () => {
     if (reduceMotion) return;
@@ -232,16 +233,21 @@
     }
   };
   const status = $("#signupStatus");
-  const fail = (message) => {
+  const fail = (message, field = input) => {
     play(form, "shake");
-    input.focus();
-    glance(input, 1400);
+    field.focus();
+    glance(field, 1400);
     status.textContent = message;
   };
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (button.disabled) return;
+    const empty = fields.find((field) => !field.value.trim());
+    if (empty && empty !== input) {
+      fail(`Pop in your ${empty.name} and we'll say hello.`, empty);
+      return;
+    }
     if (!input.checkValidity() || !input.value) {
       input.placeholder = "Need an email to say hello";
       fail("Pop in a valid email address and we'll say hello.");
@@ -249,6 +255,7 @@
     }
 
     button.disabled = true;
+    window.captureAnalytics?.("landing_signup_submitted");
     button.textContent = "Saving…";
     status.textContent = "";
     let result;
@@ -256,7 +263,9 @@
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: input.value, website: form.elements.website.value }),
+        body: JSON.stringify({
+          name: fields[0].value, company: fields[1].value, email: input.value, website: form.elements.website.value,
+        }),
       });
       result = { ok: res.ok, ...(await res.json().catch(() => ({}))) };
     } catch {
@@ -265,12 +274,14 @@
     button.disabled = false;
 
     if (!result.ok) {
+      window.captureAnalytics?.("landing_signup_failed");
       button.textContent = "Hire Properly";
       fail(result.error ?? "That didn't save. Check your connection and try again.");
       return;
     }
     form.classList.add("is-done");
-    input.value = "";
+    window.captureAnalytics?.("landing_signup_completed", { duplicate: Boolean(result.duplicate) });
+    fields.forEach((field) => { field.value = ""; });
     input.placeholder = "We'll be in touch very soon";
     play(mascot, "hop");
     glance(button, 1400);
@@ -289,8 +300,9 @@
   document.querySelectorAll('a[href="#signup"]').forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
+      window.captureAnalytics?.("landing_signup_cta_clicked");
       form.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-      setTimeout(() => input.focus({ preventScroll: true }), reduceMotion ? 0 : 700);
+      setTimeout(() => fields[0].focus({ preventScroll: true }), reduceMotion ? 0 : 700);
     });
   });
 

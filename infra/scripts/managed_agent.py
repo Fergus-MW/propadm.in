@@ -1,4 +1,7 @@
-"""Create or update the one Claude Managed Agents environment + "Propadmin" agent. Re-runnable.
+"""Create or update the Claude Managed Agents environment, "Propadmin" and "Propadmin Admin".
+
+Re-runnable. Both agents share the one sandbox environment and the one MCP server; the admin
+agent's chat sessions get an admin-scoped MCP grant (admin_api + unrestricted graph writes).
 
     ANTHROPIC_API_KEY=... uv run python infra/scripts/managed_agent.py [--verify]
 
@@ -19,6 +22,7 @@ MCP_URL = os.getenv('MCP_SERVER_URL', 'https://api-309727281538.europe-west1.run
 MODEL = os.getenv('AGENT_MODEL', 'claude-sonnet-5-5')
 ENV_NAME = 'propadmin'
 AGENT_NAME = 'Propadmin'
+ADMIN_AGENT_NAME = 'Propadmin Admin'
 
 SYSTEM = """You are Propadmin, the single autonomous agent for a property-management company.
 Each session is one task (a ticket, an email or call thread, a scheduled invocation, or an
@@ -30,7 +34,27 @@ sandbox (bash, files) only for your own calculations and documents.
 
 Skills: workflows live in the graph. Before following a workflow, call get_skill with its
 slug (e.g. planning-and-sleeping, workflow-review, choose-provider, provider-research,
-contractor-invoice, landlord-statement, reconcile-ledger, rent-arrears) and follow it.
+resolve-maintenance-email, contractor-invoice, landlord-statement, reconcile-ledger,
+rent-arrears) and follow it.
+
+Maintenance email: your objective is to resolve the issue as fast as possible while using
+qualified suppliers and respecting sourced spending limits. Follow resolve-maintenance-email.
+After planning, reply to the tenant first to acknowledge receipt and give a concrete next
+update time. Then contact several suitable suppliers in separate emails for quotes and
+earliest attendance before waiting for any one reply. All their threads belong to this
+task; act on replies as they arrive. Do not delay urgent attendance just to collect every
+quote. Keep the tenant updated with confirmed timelines, changes and delays. Booking or
+accepting a quote is not resolution: keep the plan open until repair completion is evidenced
+and a final reply has been sent to the tenant. Never invent prices or attendance times.
+
+Ticket completion: before setting a ticket to resolved or closed, write fields.final_answer
+and fields.reasoning as Markdown in the same update. final_answer gives the answer or query
+result, or whether the instruction was executed; if not, explain why. reasoning is a thorough
+evidence-based explanation for the reader: document every observable step in order, source
+and tool-result references, actions attempted, outcomes, checks, failures, skipped actions
+and their reasons, and remaining limitations. Explain how the evidence supports the outcome.
+Include all recorded steps without truncating them or inventing missing ones. This is an
+audit explanation, not hidden model thoughts or private chain-of-thought.
 
 Plans: call get_plan first on every start and wake-up. For any task with more than one
 action, create_plan before acting, then work through it. Exactly one step is in_progress at
@@ -48,6 +72,13 @@ Autonomy: no human approves your actions. You send emails, place calls, book con
 use the browser and write to the graph yourself. Every mutating tool call must carry a
 clear, specific reason; your actions are logged with this session and that reason.
 
+Sources, in order: the Propadmin graph is the source of truth. Always search and read it
+through the propadmin MCP tools first, and act through those tools (email, calls, CRM,
+tickets, plans). Use web_search/web_fetch only for public information the graph does not
+hold (new contractors, council or utility guidance, prices), and record useful findings
+back into the graph with a source. Use the browser tools only for sites that need
+interaction or a login.
+
 Graph rules: read an entity (and its version) before writing; on a version conflict re-read
 and retry. You may create and update entities, add or remove manual edges, merge duplicates
 and add notes. Edge rules and rule-generated edges are admin-only: never try to edit rules or
@@ -58,6 +89,32 @@ Honesty: never fabricate data. Provider names, prices, availability, quotes, cal
 email replies and any other external result must come from a tool result in this session or
 the graph. If a provider, tool or service is unavailable or not configured, say so, record
 it on the plan step, and do not invent a substitute result."""
+
+
+ADMIN_SYSTEM = """You are Propadmin Admin, the assistant administrators chat with in the
+Properly admin panel. You can do everything the operations agent can (graph read/write, tickets,
+email, phone, CRM, browser, plans, skills, scheduling, all through the propadmin MCP server) plus
+everything the admin panel can, via two admin tools: list_admin_endpoints shows every admin API
+endpoint; admin_api calls one as the administrator (edge rules, entity types and schema,
+settings, providers and credentials, ledgers, skills and skill proposals, ingestion, agent runs,
+change log and undo). Unlike the operations agent you may edit live skills, rules and
+rule-generated edges.
+
+You are talking to an administrator in a chat. Answer questions directly and concisely. Do
+read-only lookups freely. Before any destructive or bulk change (deletes, merges, rule or
+schema changes, sending email or placing calls, approving proposals) state exactly what you
+will change and wait for the admin to confirm, unless they already asked for that exact change.
+Every mutation carries a clear, specific reason; your actions are logged with this chat.
+
+Use the sandbox (bash, files) for calculations, data wrangling and drafting documents. Use
+web_search/web_fetch only for public information the graph does not hold.
+
+Graph rules: read an entity (and its version) before writing; on a version conflict re-read
+and retry. When an admin_api call fails, read the error, fix the request and retry; call
+list_admin_endpoints rather than guessing a path or body.
+
+Honesty: never fabricate data. Every fact, id, price or outcome you report must come from a
+tool result in this chat or the graph. If a tool or provider is unavailable, say so."""
 
 
 def client():
@@ -97,14 +154,12 @@ def find(http, path, name):
 def ensure_environment(http):
     body = {
         'name': ENV_NAME,
-        'description': 'Propadmin agent sandbox: MCP server + package managers only.',
+        'description': 'Propadmin agent sandbox: open web for search/fetch; no credentials inside.',
         'config': {
             'type': 'cloud',
-            'networking': {
-                'type': 'limited',
-                'allow_mcp_servers': True,
-                'allow_package_managers': True,
-            },
+            # web_search/web_fetch obey limited allowed_hosts, so open search needs unrestricted.
+            # The sandbox holds no secrets: the MCP token lives in the vault, injected per call.
+            'networking': {'type': 'unrestricted'},
         },
     }
     existing = find(http, '/environments', ENV_NAME)
@@ -113,23 +168,20 @@ def ensure_environment(http):
     return call(http, 'POST', '/environments', body)
 
 
-def ensure_agent(http):
+def ensure_agent(http, name=AGENT_NAME, system=SYSTEM,
+                 description='The single autonomous Propadmin agent; one session per task.'):
     body = {
-        'name': AGENT_NAME,
+        'name': name,
         'model': MODEL,
-        'description': 'The single autonomous Propadmin agent; one session per task.',
-        'system': SYSTEM,
+        'description': description,
+        'system': system,
         'mcp_servers': [{'type': 'url', 'name': 'propadmin', 'url': MCP_URL}],
         'tools': [
             {
-                # Built-in sandbox tools for agent-written code; the web goes through the
-                # MCP browser tools, so the built-in web tools stay off.
+                # Built-in sandbox tools, including web_search/web_fetch for public lookups;
+                # interactive or logged-in sites still go through the MCP browser tools.
                 'type': 'agent_toolset_20260401',
                 'default_config': {'enabled': True, 'permission_policy': {'type': 'always_allow'}},
-                'configs': [
-                    {'name': 'web_fetch', 'enabled': False},
-                    {'name': 'web_search', 'enabled': False},
-                ],
             },
             {
                 # Nobody answers confirmations: full autonomy per the PRD.
@@ -140,7 +192,7 @@ def ensure_agent(http):
         ],
         'metadata': {'app': 'propadmin'},
     }
-    existing = find(http, '/agents', AGENT_NAME)
+    existing = find(http, '/agents', name)
     if existing:
         return call(http, 'POST', f"/agents/{existing['id']}", body)
     return call(http, 'POST', '/agents', body)
@@ -193,7 +245,10 @@ def main():
         env = ensure_environment(http)
         agent = ensure_agent(http)
         print('MANAGED_ENVIRONMENT_ID', env['id'])
+        admin = ensure_agent(http, ADMIN_AGENT_NAME, ADMIN_SYSTEM,
+                             'Admin panel chat agent: full graph and admin API access.')
         print('MANAGED_AGENT_ID', agent['id'], 'version', agent.get('version'))
+        print('MANAGED_ADMIN_AGENT_ID', admin['id'], 'version', admin.get('version'))
         if args.verify:
             verify(http, agent, env)
 

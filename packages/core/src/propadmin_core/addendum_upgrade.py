@@ -9,6 +9,7 @@ from .graph import add_edge, create_in_state
 from .registry import default_types, hard_keys
 from .registry_addendum import TRADES
 from .store import now, publish
+from .ticket_completion import upgrade_ticket_completion
 
 TRADE_MAP = {
     "heating": "heating/gas",
@@ -265,4 +266,4 @@ def upgrade_addendum(state):
     refresh_property_edges(state)
     if changed:
         publish(state, "registry.upgraded", {"addendum": "A"})
-    return changed
+    return upgrade_ticket_completion(state, definitions, embedder or EmbeddingService()) or changed

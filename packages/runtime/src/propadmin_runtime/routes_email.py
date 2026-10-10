@@ -1,6 +1,7 @@
 """API-side email routes and MCP tools; AgentMail itself is only reached by the email service."""
 
 from fastapi import APIRouter, Depends, Request
+from propadmin_core.store import now, publish
 from pydantic import BaseModel, Field
 
 from .auth import require_admin
@@ -27,6 +28,17 @@ def _tool(path, name):
         payload = {**args, "run_id": run_id}
         try:
             result = call_service(app.state.settings, "email", path, payload)
+            # A task can own many conversations (tenant plus competing suppliers).
+            # Claim every successful send immediately, before the agent decides to sleep.
+            def claim(state):
+                run = state["runs"].get(run_id)
+                if run and run["status"] in {"queued", "running", "sleeping"}:
+                    subjects = {result[k] for k in ("thread_id", "email_id") if result.get(k)}
+                    run["subjects"] = sorted(set(run["subjects"]) | subjects)
+                    run["updated_at"] = now()
+                    publish(state, "agent_run.subjects", {"run_id": run_id, "subjects": run["subjects"]})
+
+            app.state.store.mutate(claim)
         except Exception as error:
             record_action(
                 app.state.store, run_id, name, args, reason=args.get("reason", ""), error=str(error)
@@ -53,7 +65,9 @@ _REASON = {"type": "string", "maxLength": 2000}
 TOOLS = {
     "send_email": {
         "description": "Send a new email from the agent's AgentMail inbox. Records it as an email "
-        "entity linked to recipients and entity_ids (tickets, companies, people it concerns).",
+        "entity linked to recipients and entity_ids (tickets, companies, people it concerns). "
+        "Automatically attaches the new thread to this run so supplier replies resume it. "
+        "Send separate emails to competing suppliers before sleeping for replies.",
         "input_schema": {
             "type": "object",
             "properties": {

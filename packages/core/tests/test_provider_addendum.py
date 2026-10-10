@@ -235,6 +235,8 @@ def test_observed_provider_metrics_reversed_spend_and_optimistic_upsert():
             "name": "Resolved tap",
             "fields": {
                 "status": "closed",
+                "final_answer": "The tap was repaired in one visit.",
+                "reasoning": "The synthetic completion record reports one visit and tenant feedback of 4/5.",
                 "reported_at": "2026-10-10T10:00:00Z",
                 "scheduled_visit_at": "2026-10-10T11:00:00Z",
                 "first_visit_at": "2026-10-10T12:00:00Z",
