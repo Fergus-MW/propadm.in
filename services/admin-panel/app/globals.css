@@ -448,3 +448,113 @@ textarea {
     animation-duration: 0s !important;
   }
 }
+
+/* Admin agent chat: fills the workspace below the topbar. */
+.admin-chat {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  height: calc(100dvh - 72px - 64px);
+  border-top: 1px solid var(--border);
+}
+.chat-threads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 12px 12px 12px 0;
+  border-right: 1px solid var(--border);
+}
+.chat-thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.chat-thread {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+  border-left: 4px solid transparent;
+}
+.chat-thread:hover,
+.chat-thread.active {
+  border-left-color: var(--foreground);
+}
+.chat-thread:focus-visible {
+  outline: 2px solid var(--ring);
+}
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.chat-composer {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 12px 16px 0;
+  text-align: center;
+}
+.chat-composer .notice {
+  margin: 0;
+  padding: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.admin-chat .notice > span {
+  white-space: normal;
+}
+/* Streamdown tables and code follow the flat, square table pattern. */
+.admin-chat [data-streamdown="table-wrapper"],
+.admin-chat [data-streamdown="code-block"] {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}
+.admin-chat [data-streamdown="table-wrapper"] div,
+.admin-chat [data-streamdown="table"] {
+  border: 0;
+  border-radius: 0;
+}
+.admin-chat [data-streamdown="table-header"] {
+  background: transparent;
+}
+.chat-composer-box textarea {
+  min-height: 48px;
+}
+.chat-composer-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  text-align: left;
+}
+@media (max-width: 760px) {
+  .admin-chat {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: calc(100dvh - 60px - 48px);
+  }
+  .chat-threads {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-thread-list {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .chat-thread {
+    max-width: 200px;
+  }
+  .chat-thread .caption {
+    display: none;
+  }
+}
