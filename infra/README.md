@@ -86,7 +86,7 @@ terraform -chdir=infra/main apply
 ```
 
 Add provider secret versions (`anthropic-api-key`, `elevenlabs-api-key`,
-`elevenlabs-webhook-secret`, `agentmail-api-key`, `agentmail-webhook-secret`,
+`elevenlabs-webhook-secret`, `elevenlabs-tool-secret`, `agentmail-api-key`, `agentmail-webhook-secret`,
 `browserbase-api-key`) to Secret Manager and list them in `secret_versions`;
 non-secret ids (`MANAGED_AGENT_ID`, `MANAGED_ADMIN_AGENT_ID`, `MANAGED_ENVIRONMENT_ID`,
 `ELEVENLABS_AGENT_ID`, `ELEVENLABS_PHONE_NUMBER_ID`, `BROWSERBASE_PROJECT_ID`,
@@ -100,6 +100,12 @@ secret references when they are absent from this map, causing inbound webhooks
 to return 503 and preventing outbound replies. Record provider secret versions
 in `terraform.tfvars` when configuring them, even if the first attachment was
 made with `gcloud`.
+
+For Vonage, use the ElevenLabs ID of the imported Vonage number in the voice
+service's `service_environment`. Calls always use ElevenLabs' SIP endpoint.
+Vonage account credentials and trunk passwords
+are provisioning credentials, not voice-service runtime secrets. Follow the
+[voice setup](../services/voice/README.md); no extra Cloud Run service is needed.
 
 Secrets are mounted only into their consuming services. The API/ingestion
 accounts may invoke Vertex models, and ingestion can write raw objects. Delivery

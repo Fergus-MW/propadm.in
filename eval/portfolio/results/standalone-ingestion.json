@@ -1,0 +1,37 @@
+{
+  "kind": "portfolio_ingestion_validation",
+  "mode": "combined",
+  "platform_revision": "7cecf53eace9ad9170faaf1478949eb4dbc9bb17",
+  "pack_sources_sha256": "fef5edbeae135f51c3b4cad23d09394ac7ffe13da031b917207f10e2e32df784",
+  "real_agent_executed": false,
+  "real_provider_calls": false,
+  "selected_properties": 5,
+  "batches": [
+    {
+      "batch": "portfolio",
+      "status": "passed",
+      "source_count": 175,
+      "entities": {
+        "company": 1,
+        "person": 77,
+        "service_provider": 36,
+        "service_offering": 108,
+        "property": 5,
+        "transaction": 101,
+        "workflow_issue": 30,
+        "ticket": 20,
+        "quote": 20,
+        "email": 42,
+        "call": 20
+      },
+      "documents": 175,
+      "edges": 4616,
+      "replayed_sources": 30,
+      "unallocated": 1,
+      "seconds": 45.212
+    }
+  ],
+  "passed": 1,
+  "errors": 0,
+  "limitations": "Offline extraction; sharded mode does not establish whole-portfolio load performance or cross-shard identity behaviour."
+}

@@ -1,7 +1,7 @@
-"""Voice adapter: ElevenLabs Agents outbound calls, inbound call briefs, server tools, post-call ingest.
+"""Voice adapter: ElevenLabs Agents over Vonage SIP, call briefs, tools and post-call ingest.
 
 ElevenLabs API shapes (docs: elevenlabs.io/docs, via Context7 /websites/elevenlabs_io):
-- POST /v1/convai/{twilio|sip-trunk}/outbound-call {agent_id, agent_phone_number_id, to_number,
+- POST /v1/convai/sip-trunk/outbound-call {agent_id, agent_phone_number_id, to_number,
   conversation_initiation_client_data: {dynamic_variables}} -> {success, message, conversation_id}
 - Conversation-initiation webhook body {caller_id, called_number, agent_id, call_sid, conversation_id};
   reply {type: "conversation_initiation_client_data", dynamic_variables}. Auth is a header secret
@@ -176,14 +176,13 @@ def place_call(payload: dict, request: Request):
         env("ELEVENLABS_AGENT_ID"),
         env("ELEVENLABS_PHONE_NUMBER_ID"),
     )
-    telephony = os.getenv("ELEVENLABS_TELEPHONY", "twilio")  # or sip-trunk
     state = app.state.store.snapshot()
     target, number = phone_target(state, entity_id)
     brief = build_brief(state, target["id"], payload.get("brief", ""))
     if target["id"] != entity_id:
         brief += "\n\nAbout:\n" + build_brief(state, entity_id)
     response = httpx.post(
-        f"{API}/v1/convai/{telephony}/outbound-call",
+        f"{API}/v1/convai/sip-trunk/outbound-call",
         headers={"xi-api-key": key},
         json={
             "agent_id": agent_id,

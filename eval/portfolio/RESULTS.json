@@ -1,0 +1,94 @@
+{
+  "recorded_at": "2026-10-10T12:26:56.612664+00:00",
+  "platform_revision": "7cecf53eace9ad9170faaf1478949eb4dbc9bb17",
+  "pack_sources_sha256": "fef5edbeae135f51c3b4cad23d09394ac7ffe13da031b917207f10e2e32df784",
+  "properties": 120,
+  "unique_source_files": 3288,
+  "formats": {
+    ".json": 758,
+    ".csv": 120,
+    ".md": 720,
+    ".txt": 680,
+    ".ofx": 10,
+    ".eml": 1000
+  },
+  "source_bytes": 2402565,
+  "records_declared": {
+    "call": 480,
+    "company": 1,
+    "person": 306,
+    "property": 120,
+    "quote": 480,
+    "service_offering": 108,
+    "service_provider": 36,
+    "ticket": 480
+  },
+  "sharded_validation": {
+    "passed_batches": 121,
+    "errors": 0,
+    "properties_checked": 120,
+    "total_ingestion_requests": 3888,
+    "source_replays": 721,
+    "property_transactions": 2376,
+    "unallocated_payments": 10,
+    "artifact": "results/sharded-ingestion.json"
+  },
+  "combined_validation": {
+    "properties": [
+      "SYN-P0001",
+      "SYN-P0002",
+      "SYN-P0005",
+      "SYN-P0012",
+      "SYN-P0031"
+    ],
+    "result": {
+      "batch": "portfolio",
+      "status": "passed",
+      "source_count": 175,
+      "entities": {
+        "company": 1,
+        "person": 77,
+        "service_provider": 36,
+        "service_offering": 108,
+        "property": 5,
+        "transaction": 101,
+        "workflow_issue": 30,
+        "ticket": 20,
+        "quote": 20,
+        "email": 42,
+        "call": 20
+      },
+      "documents": 175,
+      "edges": 4616,
+      "replayed_sources": 30,
+      "unallocated": 1,
+      "seconds": 63.593
+    },
+    "artifact": "results/combined-ingestion.json"
+  },
+  "unit_tests": {
+    "ingestion_tests_passed": 4,
+    "note": "Only the ingestion test subset is included in this package."
+  },
+  "lint": "passed",
+  "real_agent_executed": false,
+  "real_provider_calls": false,
+  "whole_portfolio_combined_import_executed": false,
+  "code_sha256": {
+    "eval/portfolio/__init__.py": "420791828711dfefa0959619971b11acded2afacfebeb6835fa32c0d88700350",
+    "eval/portfolio/build.py": "a4764d4b887385de5cec8fe4f3d3236a641f704841285c457a145609b37e7606",
+    "eval/portfolio/catalogue.py": "0a14570928cf623481b712c93fa470edf6bf2ef5cc251852694054054c0905ac",
+    "eval/portfolio/check.py": "9de8f8e9cde684a74a5a8596bb2e1e16581c6f0f6a9dd685cf57540eb2345b1a",
+    "eval/portfolio/load.py": "b5eee64efb385b887aa6664e34a5fc259872ac19d6febf28cf932f4299ac20f5",
+    "eval/portfolio/stories.py": "a632ef9816df53f719c1a1ca2c7e2f76520aff76ed6c299b7dcfccc397b256fe",
+    "eval/portfolio_data.py": "1922e1e413d2123b6adad6f5c8b1a57267f608216f6a94db2467445661e37088",
+    "eval/tests/test_portfolio_data.py": "ba3a939e3627ca6393aa8afce25f290f8c64f037b62336152ebcb9c030af4a27"
+  },
+  "limitations": [
+    "Offline ingestion and domain invariants, not autonomous-agent outcomes",
+    "All sources checked in isolated property batches; five properties checked in one combined graph",
+    "Source histories include known outcomes and cannot be used unfiltered as blind evaluations",
+    "No database deployment, OCR, speech recognition, live model or full UI run"
+  ],
+  "provenance_note": "Original full-dataset execution before the ingestion-only packaging refactor. Historical code hashes below are not hashes of the current self-contained package; see PACKAGING_VALIDATION.json."
+}

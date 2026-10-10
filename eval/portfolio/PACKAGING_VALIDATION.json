@@ -1,0 +1,40 @@
+{
+  "recorded_at": "2026-10-10T12:34:12.279229+00:00",
+  "platform_base_revision": "7cecf53eace9ad9170faaf1478949eb4dbc9bb17",
+  "package_scope": [
+    "eval/portfolio/",
+    "eval/portfolio_data.py"
+  ],
+  "dependencies_on_other_evaluation_modules": [],
+  "unit_tests": {
+    "command": "python3 -m unittest discover -s eval/portfolio/tests -v",
+    "passed": 4
+  },
+  "lint": "passed",
+  "bundled_archive_crc": "passed",
+  "bundled_archive_sha256": "c2d7efb3bb9344831ab8ff65f9b224c61e7806084780d613fcebbb1a2c06c8e3",
+  "source_files_validated": 3288,
+  "regenerated_manifest_matches_archive": true,
+  "pack_sources_sha256": "fef5edbeae135f51c3b4cad23d09394ac7ffe13da031b917207f10e2e32df784",
+  "combined_ingestion": {
+    "passed": 1,
+    "errors": 0,
+    "properties": 5,
+    "source_files": 175,
+    "report": "results/standalone-ingestion.json"
+  },
+  "real_agent_executed": false,
+  "real_provider_calls": false,
+  "code_sha256": {
+    "eval/portfolio/__init__.py": "420791828711dfefa0959619971b11acded2afacfebeb6835fa32c0d88700350",
+    "eval/portfolio/build.py": "4dd35b26c45012b6987fcb0c3bf594512f0eb83da12e713b143f667e18e66d12",
+    "eval/portfolio/catalogue.py": "0a14570928cf623481b712c93fa470edf6bf2ef5cc251852694054054c0905ac",
+    "eval/portfolio/check.py": "89cc2a1e3e67597943ee439867080eac8cae717e49ad27a5742064a80a0f9f01",
+    "eval/portfolio/io.py": "50fb109ee7be9394d3e1067bb1dced171c94acdaefa7a9ffab81333a9a937f95",
+    "eval/portfolio/load.py": "c54286cdeacccb93ae08f91bd922262365922206e619b948146d2e53a4607cd6",
+    "eval/portfolio/stories.py": "a632ef9816df53f719c1a1ca2c7e2f76520aff76ed6c299b7dcfccc397b256fe",
+    "eval/portfolio/tests/test_portfolio_data.py": "5709b521fc9ea2498be2f4e8c3a72c9bd701cf476fd8527e3c59e2dd6b280906",
+    "eval/portfolio_data.py": "1922e1e413d2123b6adad6f5c8b1a57267f608216f6a94db2467445661e37088"
+  },
+  "note": "Original full-corpus results are preserved separately. This run validates the isolated package after removing stress-suite/lab dependencies."
+}
