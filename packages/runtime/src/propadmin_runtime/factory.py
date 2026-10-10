@@ -62,7 +62,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
                 scheduler.cancel()
                 with suppress(asyncio.CancelledError):
                     await scheduler
-            app.state.telemetry.provider.shutdown()
+            await asyncio.to_thread(app.state.telemetry.shutdown)
 
     app = FastAPI(title=f"Properly {service}", version="0.1.0", lifespan=lifespan)
     app.state.telemetry = Telemetry(service)

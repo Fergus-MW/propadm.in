@@ -249,6 +249,7 @@
     }
 
     button.disabled = true;
+    window.captureAnalytics?.("landing_signup_submitted");
     button.textContent = "Saving…";
     status.textContent = "";
     let result;
@@ -265,11 +266,13 @@
     button.disabled = false;
 
     if (!result.ok) {
+      window.captureAnalytics?.("landing_signup_failed");
       button.textContent = "Hire Properly";
       fail(result.error ?? "That didn't save. Check your connection and try again.");
       return;
     }
     form.classList.add("is-done");
+    window.captureAnalytics?.("landing_signup_completed", { duplicate: Boolean(result.duplicate) });
     input.value = "";
     input.placeholder = "We'll be in touch very soon";
     play(mascot, "hop");
@@ -289,6 +292,7 @@
   document.querySelectorAll('a[href="#signup"]').forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
+      window.captureAnalytics?.("landing_signup_cta_clicked");
       form.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
       setTimeout(() => input.focus({ preventScroll: true }), reduceMotion ? 0 : 700);
     });

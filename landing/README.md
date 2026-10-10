@@ -52,3 +52,16 @@ the link on mobile, where the existing design hides secondary header actions.
 - `server.mjs` serves `public/`, `GET /healthz` and `POST /api/signup`.
 - The page is a marketing surface with its own look, so it does not use the
   admin design system described in `design.md`.
+
+## Analytics
+
+Set `POSTHOG_PROJECT_TOKEN` to the public `phc_` project token and `POSTHOG_HOST`
+to the project's ingestion host (`https://us.i.posthog.com` for US Cloud).
+`make dev` loads these from the root `.env`; standalone startup needs them in
+the shell environment. An empty token disables analytics. The runtime
+`/api/analytics-config` endpoint allows the same container image to be configured
+without a rebuild. Personal `phx_` API keys are never exposed.
+
+Page views and explicit conversion events include the `surface` property.
+Tracking excludes form values and URL query strings/fragments; session replay
+and automatic DOM capture are disabled.

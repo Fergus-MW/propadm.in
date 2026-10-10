@@ -1,4 +1,7 @@
 project_id = "your-unique-propadmin-project"
+# Public ingestion token, not a personal API key. Empty disables analytics.
+posthog_project_token = ""
+posthog_host = "https://us.i.posthog.com"
 build_service_account = "propadmin-build@your-unique-propadmin-project.iam.gserviceaccount.com"
 # Each image must already exist in Artifact Registry.
 images = {

@@ -151,3 +151,20 @@ test("the HTTP endpoint normalises emails for a durable signup store", async () 
     await new Promise((done) => durable.close(done));
   }
 });
+
+test("runtime analytics config exposes only a public ingestion token", async () => {
+  for (const token of ["phc_test", "phx_private", ""]) {
+    const analyticsServer = await createLandingServer({
+      signupStore: async () => true,
+      analytics: { projectToken: token, host: "https://us.i.posthog.com", environment: "test" },
+    });
+    await new Promise((ready) => analyticsServer.listen(0, "127.0.0.1", ready));
+    try {
+      const config = await fetch(`http://127.0.0.1:${analyticsServer.address().port}/api/analytics-config`);
+      assert.equal(config.headers.get("cache-control"), "no-store");
+      assert.equal((await config.json()).projectToken, token.startsWith("phc_") ? token : "");
+    } finally {
+      await new Promise((done) => analyticsServer.close(done));
+    }
+  }
+});

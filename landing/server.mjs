@@ -48,6 +48,11 @@ export async function createLandingServer({
   publicDir = join(HERE, "public"),
   signupsPath = join(HERE, ".data", "signups.csv"),
   signupStore,
+  analytics = {
+    projectToken: process.env.POSTHOG_PROJECT_TOKEN ?? "",
+    host: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
+    environment: process.env.NODE_ENV === "production" ? "production" : "development",
+  },
 } = {}) {
   const root = resolve(publicDir);
   const saveSignup = signupStore ?? await createCsvSignupStore(signupsPath);
@@ -102,6 +107,14 @@ export async function createLandingServer({
     try {
       const { pathname } = new URL(req.url, "http://localhost");
       if (pathname === "/healthz") return send(res, 200, "ok", { "Content-Type": "text/plain" });
+      if (pathname === "/api/analytics-config") {
+        if (req.method !== "GET") return json(res, 405, { error: "Use GET." }, { Allow: "GET" });
+        return json(res, 200, {
+          projectToken: analytics.projectToken.startsWith("phc_") ? analytics.projectToken : "",
+          host: analytics.host,
+          environment: analytics.environment,
+        }, { "Cache-Control": "no-store" });
+      }
       if (pathname === "/api/signup") {
         return req.method === "POST"
           ? await signup(req, res)

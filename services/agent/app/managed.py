@@ -240,6 +240,9 @@ def run_evidence(app, run):
     latest = messages[-1] if messages else {}
     return {
         "status": run["status"],
+        "goal": run["goal"],
+        "created_at": run["created_at"],
+        "trace_context": run.get("trace_context", {}),
         "final_message": latest.get("text", run.get("final_message", "")),
         "message_id": latest.get("id"),
         "plan": state["plans"].get(run.get("plan_id") or ""),

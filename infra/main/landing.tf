@@ -52,6 +52,13 @@ resource "google_cloud_run_v2_service" "landing" {
         name  = "SIGNUPS_BUCKET"
         value = google_storage_bucket.signups[0].name
       }
+      dynamic "env" {
+        for_each = local.analytics
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
       startup_probe {
         http_get {
           path = "/healthz"

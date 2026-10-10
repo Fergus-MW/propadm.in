@@ -1,4 +1,5 @@
 "use client";
+import { captureAnalytics } from "@/lib/analytics";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -102,6 +103,7 @@ export function Shell({ children }: { children: ReactNode }) {
       const data = await result.json();
       if (!result.ok) throw new Error(data.detail ?? "Sign in failed");
       setPassword("");
+      captureAnalytics("admin_signed_in");
       await session.refetch();
     } catch (reason) {
       setError(reason instanceof Error ? reason : new Error("Sign in failed"));
@@ -207,6 +209,7 @@ export function Shell({ children }: { children: ReactNode }) {
               variant="ghost"
               onClick={async () => {
                 await fetch("/api/session", { method: "DELETE" });
+                captureAnalytics("admin_signed_out");
                 await session.refetch();
               }}
             >

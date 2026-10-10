@@ -47,6 +47,20 @@ variable "service_environment" {
   type    = map(map(string))
   default = {}
 }
+variable "posthog_project_token" {
+  description = "Public PostHog ingestion token (phc_), never a personal API key. Empty disables analytics."
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.posthog_project_token == "" || startswith(var.posthog_project_token, "phc_")
+    error_message = "Use a public project token beginning phc_, not a personal API key."
+  }
+}
+variable "posthog_host" {
+  description = "PostHog ingestion host matching the project's region."
+  type        = string
+  default     = "https://us.i.posthog.com"
+}
 variable "enable_runtime" {
   description = "Explicit gate: runtime requires production shared durable repository and tested provider wiring. Local file storage is unsuitable for Cloud Run."
   type        = bool
