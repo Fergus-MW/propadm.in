@@ -26,6 +26,30 @@ STARTER_SKILLS = {
         "Graph conventions",
         "Read canonical entities, cite evidence and write with current entity versions.",
     ),
+    "emergency-response": (
+        "Emergency response",
+        "Confirm real danger, give safety steps, arrange a make-safe and alert staff at once.",
+    ),
+    "landlord-approval": (
+        "Landlord approval",
+        "Ask for, read and record landlord approvals and quotes without inventing authority.",
+    ),
+    "job-completion": (
+        "Job completion",
+        "Verify reported work with the tenant, route the cost and resolve or close the ticket.",
+    ),
+    "chasing-and-follow-up": (
+        "Chasing and follow-up",
+        "Decide whether to act or wait, chase on schedule and escalate the channel when ignored.",
+    ),
+    "escalation-and-handover": (
+        "Escalation and handover",
+        "Hand staff only the decisions beyond the agent's authority, with a two-minute brief.",
+    ),
+    "communications": (
+        "Communications",
+        "Email the right party with confirmed facts only, sharing details strictly as needed.",
+    ),
     "planning-and-sleeping": (
         "Plan and sleep",
         "Maintain one in-progress step, preserve evidence, and wake within ten minutes.",
@@ -35,6 +59,50 @@ STARTER_SKILLS = {
         "Report recurring workflow issues and propose specific improvements with evidence.",
     ),
 }
+
+
+def sync_repository_skills(state):
+    """Keep starter workflows in step with skills/<slug>/SKILL.md on every seed.
+
+    Graphs seeded before a skill file existed (or changed) get the skill created, or a new
+    version published over one the seed itself wrote. Versions from approved proposals or
+    admins are never replaced.
+    """
+    root = Path(__file__).resolve().parents[4] / "skills"
+    for slug, (title, description) in STARTER_SKILLS.items():
+        path = root / slug / "SKILL.md"
+        if not path.exists():
+            continue
+        content, key = path.read_text(), f"skill:{slug}"
+        skill = state["skills"].get(key)
+        if skill and (skill["content"] == content or skill["versions"][-1].get("created_by") != "seed"):
+            continue
+        version = skill["current_version"] + 1 if skill else 1
+        version_id = f"skill_version:{slug}-v{version}"
+        if key not in state["entities"]:
+            create_in_state(state, {"id": key, "type": "skill", "name": title, "description": description,
+                                    "fields": {"slug": slug, "source": "custom", "status": "active"}},
+                            "seed", "Repository workflow")
+        if version_id not in state["entities"]:
+            create_in_state(state, {"id": version_id, "type": "skill_version", "name": f"{title} · version {version}",
+                                    "description": description,
+                                    "fields": {"version": version, "content": content,
+                                               "change_summary": "Repository SKILL.md", "created_by": "seed",
+                                               "published_at": now()}}, "seed", "Repository workflow")
+        for edge in list(state["edges"].values()):
+            if edge["source"] == key and edge["relation"] == "current":
+                del state["edges"][edge["id"]]
+        add_edge(state, key, version_id, "current")
+        add_edge(state, key, version_id, "has_version")
+        entry = {"version": version, "content": content, "created_by": "seed",
+                 "change_summary": "Repository SKILL.md", "created_at": now()}
+        if skill:
+            skill.update(content=content, current_version=version)
+            skill["versions"].append(entry)
+        else:
+            state["skills"][key] = {"id": key, "slug": slug, "name": title, "description": description,
+                                    "source": "custom", "status": "active", "current_version": 1,
+                                    "content": content, "versions": [entry]}
 
 
 def seed_demo(store):
@@ -272,6 +340,7 @@ def seed_demo(store):
         publish(state, "demo.seeded", {"entities": len(records), "mode": "synthetic-offline"})
 
     store.mutate(seed_entities)
+    store.mutate(sync_repository_skills)
     ingestion = IngestionService(store)
     source = """# CRM snapshot · Ember Property Management
 Aisha Khan (TEN-031), aisha.khan@example.net, +447700900101 lives at Flat 3B, 24 Hoxton Street.
