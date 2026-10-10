@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+  <rect width="1200" height="300" rx="20" fill="#86b4d9"/>
+  <g fill="#fff" opacity=".35">
+    <ellipse cx="1030" cy="250" rx="90" ry="34"/><ellipse cx="980" cy="232" rx="50" ry="30"/>
+    <ellipse cx="120" cy="52" rx="70" ry="26"/>
+  </g>
+  <g stroke="#111" stroke-opacity=".55" stroke-width="2" fill="none">
+    <path d="M790 90 L880 140 M880 140 L980 96 M880 140 L940 210 M980 96 L1080 150 M940 210 L1080 150 M790 90 L760 190 M760 190 L940 210 M1080 150 L1120 70 M980 96 L1120 70"/>
+  </g>
+  <g stroke="#111" stroke-width="3">
+    <circle cx="790" cy="90" r="11" fill="#f0d653"/><circle cx="980" cy="96" r="9" fill="#fff"/>
+    <circle cx="1080" cy="150" r="12" fill="#f0d653"/><circle cx="940" cy="210" r="9" fill="#fff"/>
+    <circle cx="760" cy="190" r="8" fill="#fff"/><circle cx="1120" cy="70" r="7" fill="#fff"/>
+  </g>
+  <g transform="translate(838 98)">
+    <path d="M42 0 L84 30 L76 84 L8 84 L0 30 Z" fill="#111" stroke="#111" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="28" y="34" width="9" height="24" rx="4.5" fill="#fff"/><rect x="47" y="34" width="9" height="24" rx="4.5" fill="#fff"/>
+  </g>
+  <text x="70" y="132" font-family="'Space Grotesk', Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="66" font-weight="700" fill="#111" letter-spacing="-2">Properly</text>
+  <rect x="68" y="152" width="396" height="38" fill="#f0d653" stroke="#111" stroke-width="2"/>
+  <text x="82" y="179" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="24" fill="#111">Property management, done properly.</text>
+  <text x="72" y="240" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="16" fill="#111" letter-spacing="2">KNOWLEDGE GRAPH · SOURCE EVIDENCE · ACCOUNTABLE AGENT</text>
+</svg>
