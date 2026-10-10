@@ -1,6 +1,7 @@
 "use client";
 import { endpoint, type Entity } from "@/lib/api";
 import { Section } from "../common";
+import { Markdown } from "../markdown";
 import { FormSelect, FormTextarea } from "../ui/Input";
 
 export const ticketCompleted = (status: unknown) =>
@@ -24,9 +25,9 @@ export function TicketCompletion({ entity }: { entity: Entity }) {
                 Download {filename}
               </a>
             </div>
-            <div className="whitespace-pre-wrap break-words">
+            <Markdown className="break-words">
               {String(entity.fields[key] ?? "")}
-            </div>
+            </Markdown>
           </div>
         ),
       )}

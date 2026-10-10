@@ -19,6 +19,7 @@ from propadmin_core.graph import add_edge
 from propadmin_core.store import now
 from propadmin_runtime import create_app
 from propadmin_runtime.auth import require_internal
+from propadmin_runtime.email_markdown import email_html
 from propadmin_runtime.email_threads import conversation_context
 from propadmin_runtime.services import call_service
 
@@ -221,7 +222,8 @@ def build(app):
         sent = agentmail(
             "POST",
             f"/inboxes/{quote(inbox, safe='')}/messages/send",
-            {"to": to, "subject": payload["subject"], "text": payload["body"]},
+            {"to": to, "subject": payload["subject"], "text": payload["body"],
+             "html": email_html(payload["body"])},
         )
         fields = outbound_fields(
             sent, inbox, to, payload["subject"], payload["body"], payload.get("run_id")
@@ -246,7 +248,7 @@ def build(app):
         sent = agentmail(
             "POST",
             f"/inboxes/{quote(inbox, safe='')}/messages/{quote(prior['message_id'], safe='')}/reply",
-            {"text": payload["body"], "reply_all": reply_all},
+            {"text": payload["body"], "html": email_html(payload["body"]), "reply_all": reply_all},
         )
         if prior.get("direction") == "outbound":
             to = prior.get("to_addresses", [])

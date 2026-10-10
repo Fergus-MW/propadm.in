@@ -12,6 +12,7 @@ import {
   Json,
 } from "../common";
 import { Button } from "../ui/Button";
+import { Markdown } from "../markdown";
 import { object, str, time, type RecordData } from "@/lib/api";
 import { useAction, useData, useItems } from "@/lib/hooks";
 export function Actions() {
@@ -172,9 +173,18 @@ export function Communications({
                     <summary className="draw-underline cursor-pointer">
                       {str(row.subject ?? row.name)}
                     </summary>
-                    <article className="source-text max-w-lg">
-                      {str(row.body ?? row.body_text ?? row.description)}
-                    </article>
+                    {/* The agent writes outbound email as Markdown; inbound mail is plain text. */}
+                    {row.direction === "outbound" ? (
+                      <div className="max-w-lg py-2 text-sm">
+                        <Markdown>
+                          {str(row.body ?? row.body_text ?? row.description)}
+                        </Markdown>
+                      </div>
+                    ) : (
+                      <article className="source-text max-w-lg">
+                        {str(row.body ?? row.body_text ?? row.description)}
+                      </article>
+                    )}
                     <Link
                       className="draw-underline"
                       href={`/entities/${encodeURIComponent(row.id)}`}
