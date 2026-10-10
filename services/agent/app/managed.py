@@ -455,7 +455,7 @@ def sync(app, run_id):
         if saved.get("kind") == "admin":  # chats wait for the admin, never time out or finish
             if saved["status"] == "running" and settled:
                 saved["status"] = "sleeping"
-        elif saved["status"] == "running" and status in {"idle", "terminated"}:
+        elif saved["status"] == "running" and settled:
             if plan_complete(state["plans"].get(saved.get("plan_id") or "")):
                 saved.update(status="done", next_wake_at=None)
                 state.setdefault("mcp_sessions", {}).get(run_id, {})["revoked"] = True
