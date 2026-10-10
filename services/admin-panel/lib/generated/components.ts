@@ -35,6 +35,10 @@ export interface components {
             totp_seed?: string | null;
             username: string;
         };
+        DeliveryReview: {
+            evidence: string;
+            sent: boolean;
+        };
         EntityCreate: {
             aliases?: string[];
             description: string;
@@ -81,6 +85,27 @@ export interface components {
             };
             name?: string | null;
             version?: number | null;
+        };
+        PortalCommand: {
+            action: "takeover" | "handback" | "approve" | "reject" | "draft" | "note" | "stage" | "urgency" | "confirm_fix" | "reopen" | "authority" | "emergency_override" | "emergency_stand_down";
+            text: string;
+            value: string;
+            version: number;
+        };
+        PortalReply: {
+            request_id: string;
+            text: string;
+            version: number;
+        };
+        PortalSettings: {
+            paused: boolean;
+        };
+        ProspectAvailability: {
+            budget: number;
+            end: string;
+            evidence: string;
+            person_id: string;
+            start: string;
         };
         QuoteWrite: {
             fields: {
@@ -144,6 +169,9 @@ export interface components {
             amount_minor?: number | null;
             charge_id: string;
         };
+        ShareRepair: {
+            audience: "tenant" | "landlord";
+        };
         Status: {
             reason: string;
             status: string;
@@ -172,6 +200,13 @@ export interface components {
             source_file?: string | null;
             ticket_id?: string | null;
         };
+        TripRequest: {
+            end: string;
+            property_ids: string[];
+            prospect_id?: string | null;
+            start: string;
+            travel_minutes: number;
+        };
         Upload: {
             content_base64?: string | null;
             extractor_version?: string | null;
@@ -191,6 +226,15 @@ export interface components {
             loc: (string | number)[];
             msg: string;
             type: string;
+        };
+        ViewingRules: {
+            compliant: boolean;
+            consent: boolean;
+            end: string;
+            evidence: string;
+            notice_hours: number;
+            occupied: boolean;
+            start: string;
         };
     };
     responses: never;

@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./portal.css";
 :root {
   --page-gutter: 32px;
   --font-geist-sans: Arial, sans-serif;
