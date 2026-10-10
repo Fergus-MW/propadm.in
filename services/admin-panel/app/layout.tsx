@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
@@ -19,7 +20,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     >
       <body>
         <Providers>
-          <Shell>{children}</Shell>
+          <Suspense fallback={<p className="loading">Loading workspace…</p>}>
+            <Shell>{children}</Shell>
+          </Suspense>
         </Providers>
       </body>
     </html>

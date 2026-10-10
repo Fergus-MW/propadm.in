@@ -1,5 +1,10 @@
 # Propadmin product requirements
 
+Property-manager supervision is now defined by [the portal implementation](docs/portal.md)
+and its [target specification](docs/PROPERLY_PORTAL_SPEC.md). Its take-over,
+draft approval and pause controls supersede the unrestricted-autonomy statements
+below for portal-controlled work; the original requirements are retained as context.
+
 Problem
 Operational knowledge is scattered across calls, inboxes, documents and the CRM. Nobody has one view of who a customer is, what was promised, and what changed. Agents can't act reliably without that view.
 Users

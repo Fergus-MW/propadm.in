@@ -327,3 +327,9 @@ Latest local results are recorded in [VERIFICATION.md](docs/VERIFICATION.md).
 | [infra/README.md](infra/README.md) | Local supervisor, Terraform and Cloud Run deployment |
 | [design.md](design.md) | Admin panel design rules |
 | [AGENTS.md](AGENTS.md) | Rules for contributors, human or otherwise |
+
+## Property manager portal
+
+The admin app opens on Today, with Inbox, Maintenance, Viewings, Calendar and
+Availability alongside the existing graph tools. See [portal workflows, demo
+and integration limits](docs/portal.md). Start everything with `make dev`.

@@ -13,7 +13,15 @@ from propadmin_core.store import identifier, now, publish
 from propadmin_core.ticket_completion import COMPLETION_INSTRUCTIONS
 from pydantic import Field
 
-from . import routes_agent, routes_browser, routes_email, routes_voice, tools_admin, tools_ledger
+from . import (
+    routes_agent,
+    routes_browser,
+    routes_email,
+    routes_voice,
+    tools_admin,
+    tools_ledger,
+    tools_portal,
+)
 from .auth import issue_token, require_admin, require_internal, require_session
 from .models import Input
 from .observability import current_ids
@@ -26,7 +34,9 @@ SERVER_INFO = {"name": "propadmin-graph", "version": "0.1.0"}
 INSTRUCTIONS = (
     "Use this single endpoint for every graph read and write. Read entity versions before "
     "writes; re-read on conflicts. Supply a reason for mutations. Rules are admin-only. "
-    "Local mode does not execute raw SurrealQL or external communications."
+    "Local mode does not execute raw SurrealQL or external communications. "
+    "Property managers can pause or take over work. Honour portal controls; use get_portal_item "
+    "and draft_portal_reply for human review instead of sending when an action is blocked."
     " " + COMPLETION_INSTRUCTIONS
 )
 
@@ -174,24 +184,40 @@ TOOLS = [
 # Comms, browser, plan and skill tools live beside their routes; one endpoint serves all.
 EXTENSIONS = {
     name: entry
-    for module in (routes_agent, routes_voice, routes_email, routes_browser, tools_ledger)
+    for module in (
+        routes_agent,
+        routes_voice,
+        routes_email,
+        routes_browser,
+        tools_ledger,
+        tools_portal,
+    )
     for name, entry in module.TOOLS.items()
 }
 # These handlers write their own record_action entry; /mcp must not audit them twice.
 SELF_LOGGED = {
-    name for module in (routes_agent, routes_voice, routes_email, routes_browser)
+    name
+    for module in (routes_agent, routes_voice, routes_email, routes_browser)
     for name in module.TOOLS
 }
 TOOLS += [
-    {"name": name, "description": entry["description"], "inputSchema": entry["input_schema"],
-     **({"annotations": entry["annotations"]} if "annotations" in entry else {})}
+    {
+        "name": name,
+        "description": entry["description"],
+        "inputSchema": entry["input_schema"],
+        **({"annotations": entry["annotations"]} if "annotations" in entry else {}),
+    }
     for name, entry in EXTENSIONS.items()
 ]
 CATALOGUE = {item["name"]: item for item in TOOLS}
 # Admin chat runs hold an admin-scoped grant: every tool above plus the whole admin API.
 ADMIN_TOOLS = [
-    {"name": name, "description": entry["description"], "inputSchema": entry["input_schema"],
-     "annotations": entry["annotations"]}
+    {
+        "name": name,
+        "description": entry["description"],
+        "inputSchema": entry["input_schema"],
+        "annotations": entry["annotations"],
+    }
     for name, entry in tools_admin.TOOLS.items()
 ]
 ADMIN_CATALOGUE = {**CATALOGUE, **{item["name"]: item for item in ADMIN_TOOLS}}
@@ -254,6 +280,9 @@ def protect_skill(graph, entity_id=None, type_name=None, admin=False):
 
 
 def execute(request, name, args, session_id, admin=False):
+    from .portal_policy import check_agent_control
+
+    check_agent_control(request.app.state.store.snapshot(), session_id, name, args)
     if name in EXTENSIONS:
         return EXTENSIONS[name]["handler"](request.app, session_id, args)
     graph = request.app.state.graph
@@ -477,8 +506,14 @@ async def mcp(request: Request, session_id=Depends(require_session)):
     catalogue = ADMIN_CATALOGUE if admin else CATALOGUE
     tool_name = name if isinstance(name, str) and name in catalogue else "unknown"
     with telemetry.for_run(
-        run, f"execute_tool {tool_name}", {"name": name, "arguments": args, "request_id": request_id,
-                                         "request_trace_id": current_ids().get("trace_id")},
+        run,
+        f"execute_tool {tool_name}",
+        {
+            "name": name,
+            "arguments": args,
+            "request_id": request_id,
+            "request_trace_id": current_ids().get("trace_id"),
+        },
         attributes={"gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": tool_name},
     ) as outcome:
         response = await call_tool(request, session_id, request_id, name, args, admin)
@@ -500,9 +535,23 @@ async def call_tool(request, session_id, request_id, name, args, admin=False):
     try:
         validate(args, catalogue[name]["inputSchema"])
         if name in tools_admin.TOOLS:
+            from .portal_policy import check_agent_control
+
+            check_agent_control(request.app.state.store.snapshot(), session_id, name, args)
             payload = await tools_admin.call(request.app, name, args)
         else:
             payload = execute(request, name, args, session_id, admin)
+    except HTTPException as exc:
+        audit(request, session_id, name, args, "failed", "forbidden")
+        payload = {"error": {"code": "forbidden", "detail": exc.detail}}
+        return result(
+            request_id,
+            {
+                "content": [{"type": "text", "text": json.dumps(payload)}],
+                "structuredContent": payload,
+                "isError": True,
+            },
+        )
     except (KeyError, ValueError, ProviderNotConfigured) as exc:
         code = "conflict" if isinstance(exc, ConflictError) else "invalid"
         if isinstance(exc, KeyError):
@@ -527,10 +576,14 @@ async def call_tool(request, session_id, request_id, name, args, admin=False):
         )
         audit(request, session_id, name, args, "failed", "internal")
         payload = {"error": {"code": "internal", "message": "Graph tool failed unexpectedly"}}
-        return result(request_id, {
-            "content": [{"type": "text", "text": json.dumps(payload)}],
-            "structuredContent": payload, "isError": True,
-        })
+        return result(
+            request_id,
+            {
+                "content": [{"type": "text", "text": json.dumps(payload)}],
+                "structuredContent": payload,
+                "isError": True,
+            },
+        )
     audit(request, session_id, name, args, "completed")
     return result(
         request_id,

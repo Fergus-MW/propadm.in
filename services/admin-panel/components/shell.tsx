@@ -1,7 +1,7 @@
 "use client";
 import { captureAnalytics } from "@/lib/analytics";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
@@ -31,11 +31,27 @@ import { Button } from "./ui/Button";
 import { FormInput } from "./ui/Input";
 import { State } from "./common";
 import { Wordmark } from "./wordmark";
+import { PortalAlert } from "./portal/workspace";
 const groups = [
+  {
+    label: "Property manager",
+    items: [
+      { href: "/", label: "Today", icon: LayoutDashboard },
+      { href: "/portal/inbox", label: "Inbox", icon: Mail },
+      {
+        href: "/portal/maintenance",
+        label: "Maintenance",
+        icon: BriefcaseBusiness,
+      },
+      { href: "/portal/viewings", label: "Viewings", icon: Building2 },
+      { href: "/portal/calendar", label: "Calendar", icon: ListTodo },
+      { href: "/portal/availability", label: "Availability", icon: Users },
+    ],
+  },
   {
     label: "Workspace",
     items: [
-      { href: "/", label: "Overview", icon: LayoutDashboard },
+      { href: "/overview", label: "System overview", icon: LayoutDashboard },
       { href: "/graph", label: "Graph explorer", icon: Network },
       { href: "/entities", label: "Entities", icon: Boxes },
       { href: "/tickets", label: "Tickets", icon: Ticket },
@@ -72,6 +88,7 @@ const groups = [
 ];
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const demo = useSearchParams().get("demo") === "1";
   const [mobile, setMobile] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<Error | null>(null);
@@ -118,6 +135,7 @@ export function Shell({ children }: { children: ReactNode }) {
     localStorage.setItem("propadmin-theme", dark ? "dark" : "light");
     window.dispatchEvent(new Event("propadmin-theme"));
   }
+  if (pathname.startsWith("/track/")) return <>{children}</>;
   if (session.isPending || session.error)
     return (
       <div className="auth">
@@ -183,7 +201,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={demo && (item.href === "/" || item.href.startsWith("/portal/")) ? `${item.href}?demo=1` : item.href}
                     className={`nav-link draw-underline ${active ? "active" : ""}`}
                     aria-current={active ? "page" : undefined}
                     onClick={() => setMobile(false)}
@@ -239,13 +257,14 @@ export function Shell({ children }: { children: ReactNode }) {
                 .flatMap((g) => g.items)
                 .find(
                   (item) => item.href !== "/" && pathname.startsWith(item.href),
-                )?.label ?? "Overview"}
+                )?.label ?? "Today"}
             </span>
           </div>
           <Link className="draw-underline topbar-search" href="/search">
             <Search size={16} /> Search workspace <kbd>/</kbd>
           </Link>
         </div>
+        <PortalAlert />
         <main className="main-content">{children}</main>
         <footer className="workspace-footer">
           Connected knowledge. Accountable actions.

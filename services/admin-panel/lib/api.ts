@@ -28,7 +28,9 @@ export async function api<T>(
     const detail =
       typeof data.detail === "string"
         ? data.detail
-        : JSON.stringify(data.detail ?? data.error ?? response.statusText);
+        : data.detail?.reason
+          ? `${data.detail.reason}. ${data.detail.alternative ?? ""}`
+          : JSON.stringify(data.detail ?? data.error ?? response.statusText);
     throw new ApiError(detail, response.status);
   }
   return response.status === 204 ? (undefined as T) : response.json();
