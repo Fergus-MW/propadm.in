@@ -53,15 +53,32 @@ def present(state, run):
 
 
 @router.get("/agent-runs")
-def list_runs(request: Request):
+def list_runs(request: Request, kind: str | None = None):
     state = request.app.state.store.snapshot()
-    runs = sorted(state["runs"].values(), key=lambda r: r["created_at"], reverse=True)
+    runs = sorted(
+        (r for r in state["runs"].values() if not kind or r.get("kind") == kind),
+        key=lambda r: r["created_at"],
+        reverse=True,
+    )
     return {"items": [present(state, run) for run in runs]}
 
 
 @router.post("/agent-runs", status_code=201)
 def create_run(payload: RunCreate, request: Request):
     return call_service(request.app.state.settings, "agent", "/internal/runs", payload.model_dump())
+
+
+class ChatMessage(Input):
+    message: str = Field(min_length=1, max_length=20000)
+    run_id: str | None = Field(default=None, max_length=200)
+
+
+@router.post("/admin-chat")
+def admin_chat(payload: ChatMessage, request: Request):
+    """Start an admin agent chat, or send the next message to one (run_id)."""
+    return call_service(
+        request.app.state.settings, "agent", "/internal/admin-chat", payload.model_dump()
+    )
 
 
 @router.get("/agent-runs/{run_id}")

@@ -88,6 +88,26 @@ def test_modern_discovery_header_validation_and_direct_tools(gateway):
     assert missing_meta.json()["error"]["code"] == -32020
 
 
+def test_agent_ticket_completion_requires_answer_and_evidence_explanation(gateway):
+    client, store, _, headers, _ = gateway
+    result = call(client, headers, "upsert_entity", {
+        "type": "ticket", "id": "ticket:query", "name": "Query", "reason": "Operator request",
+    })
+    assert not result["isError"]
+    update = {"id": "ticket:query", "version": 1, "reason": "Query finished"}
+    denied = call(client, headers, "update_entity", {
+        **update, "fields": {"status": "resolved", "final_answer": "No matching records."},
+    })
+    assert denied["isError"] and "reasoning" in denied["content"][0]["text"]
+    assert store.snapshot()["entities"]["ticket:query"]["version"] == 1
+    completed = call(client, headers, "update_entity", {**update, "fields": {
+        "status": "resolved", "final_answer": "No matching records.",
+        "reasoning": "Searched the graph for the supplied identifier; the result was empty.",
+    }})
+    assert not completed["isError"]
+    assert completed["structuredContent"]["fields"]["status"] == "resolved"
+
+
 def test_mutations_conflicts_protection_audit_and_revocation(gateway):
     client, store, admin, headers, token = gateway
     def invoke(tool_name, **arguments):
@@ -138,3 +158,32 @@ def test_mutations_conflicts_protection_audit_and_revocation(gateway):
     assert client.post("/v1/mcp/tokens", json={"session_id": "test-session"}, headers=admin).status_code == 409
     expired = issue_token(client.app.state.settings, "agent_run:test-session", -1)
     assert rpc(client, {**headers, "Authorization": f"Bearer {expired}"}).status_code == 401
+
+
+def test_admin_scope_adds_admin_api_and_lifts_skill_protection(gateway):
+    client, store, admin, headers, _ = gateway
+    names = lambda: {t["name"] for t in rpc(client, headers, "tools/list").json()["result"]["tools"]}  # noqa: E731
+    assert "admin_api" not in names()
+    assert rpc(client, headers, params={
+        "name": "admin_api", "arguments": {"method": "GET", "path": "/v1/overview"},
+    }).json()["error"]["code"] == -32602
+
+    store.mutate(lambda state: state["mcp_sessions"]["test-session"].update(scope="admin"))
+    assert names() >= {"admin_api", "list_admin_endpoints", "send_email", "upsert_entity"}
+    paths = {e["path"] for e in call(client, headers, "list_admin_endpoints", {})["structuredContent"]["items"]}
+    assert "/v1/entity-types" in paths and not any(p.startswith("/v1/mcp/tokens") for p in paths)
+
+    read = call(client, headers, "admin_api", {"method": "GET", "path": "/v1/entity-types"})
+    assert not read["isError"] and read["structuredContent"]["status"] == 200
+    entity = {"type": "person", "name": "Admin made"}
+    unreasoned = call(client, headers, "admin_api", {"method": "POST", "path": "/v1/entities", "body": entity})
+    assert unreasoned["isError"] and "reason" in unreasoned["structuredContent"]["error"]["message"]
+    created = call(client, headers, "admin_api", {
+        "method": "POST", "path": "/v1/entities", "body": entity, "reason": "Admin asked",
+    })
+    assert created["structuredContent"]["status"] == 201
+    for path in ("/v1/mcp/tokens", "/v1/entities/graph/stream", "/v1/admin-chat"):
+        blocked = call(client, headers, "admin_api", {"method": "GET", "path": path})
+        assert blocked["isError"]
+    skill = call(client, headers, "upsert_entity", {"type": "skill", "name": "Live skill", "reason": "Admin edit"})
+    assert not skill["isError"]

@@ -12,7 +12,7 @@ node --test landing/test/server.test.mjs
 
 ## Signups
 
-The form posts to `POST /api/signup`. Valid emails are lower-cased, de-duplicated
+The form posts name, company and email to `POST /api/signup`. Valid emails are lower-cased, de-duplicated
 and appended to `landing/.data/signups.csv` (`created_at,email`), which is
 gitignored. Open it in any spreadsheet app.
 
@@ -22,6 +22,7 @@ gitignored. Open it in any spreadsheet app.
 | `HOST` | `127.0.0.1` | Use `0.0.0.0` inside a container |
 | `SIGNUPS_PATH` | `landing/.data/signups.csv` | Where signups are saved |
 | `SIGNUPS_BUCKET` | unset | Private GCS bucket for durable hosted signups; takes precedence over CSV |
+| `SIGNUP_WEBHOOK_URL` | unset | Google Chat webhook posted once per new signup (name, company, email) |
 
 Cloud Run uses `SIGNUPS_BUCKET` and its service identity to save one JSON object
 per email. SHA-256 object names keep emails out of URLs; a create-only generation

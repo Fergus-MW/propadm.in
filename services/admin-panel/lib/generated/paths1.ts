@@ -33,6 +33,22 @@ export interface paths1 {
     patch?: never;
     trace?: never;
 };
+"/v1/admin-chat": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["admin_chat_v1_admin_chat_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
 "/v1/agent-runs": {
     parameters: {
         query?: never;
@@ -665,22 +681,6 @@ export interface paths1 {
         cookie?: never;
     };
     get: operations["overview_v1_overview_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-};
-"/v1/properties": {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    get: operations["properties_v1_properties_get"];
     put?: never;
     post?: never;
     delete?: never;

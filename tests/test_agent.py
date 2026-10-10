@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from propadmin_core import Store
 from propadmin_runtime import create_app
 from propadmin_runtime.auth import verify_token
+from propadmin_runtime.routes_email import TOOLS as EMAIL_TOOLS
 from propadmin_runtime.tools_agent import TOOLS
 
 from services.agent.app import managed
@@ -126,6 +127,73 @@ def test_events_wake_owning_run_or_start_new_one(agent, anthropic, monkeypatch):
     assert ignored["action"] == "ignored"
 
 
+def test_supplier_threads_resume_repair_until_completion_and_notification(
+    agent, anthropic, monkeypatch
+):
+    from propadmin_runtime import routes_email
+
+    run = agent.post(
+        "/internal/runs", json={"goal": "Resolve leak", "subjects": ["tenant-thread"]}
+    ).json()
+    run_id, app = run["id"], agent.app
+    TOOLS["create_plan"]["handler"](app, run_id, {
+        "goal": "Repair and notify tenant",
+        "steps": [{"title": "Acknowledge and contact suppliers"},
+                  {"title": "Verify repair"}, {"title": "Send final tenant reply"}],
+    })
+    sends = iter([
+        {"thread_id": "tenant-thread", "email_id": "email:ack"},
+        {"thread_id": "supplier-a", "email_id": "email:quote-a"},
+        {"thread_id": "supplier-b", "email_id": "email:quote-b"},
+    ])
+    monkeypatch.setattr(routes_email, "call_service", lambda *args: next(sends))
+    EMAIL_TOOLS["reply_email"]["handler"](
+        app, run_id, {"email_id": "email:tenant", "body": "We are arranging repair."}
+    )
+    for address in ("a@example.net", "b@example.net"):
+        EMAIL_TOOLS["send_email"]["handler"](
+            app, run_id, {"to": [address], "subject": "Leak quote", "body": "Earliest visit?"}
+        )
+    assert set(app.state.store.snapshot()["runs"][run_id]["subjects"]) == {
+        "tenant-thread", "supplier-a", "supplier-b", "email:ack",
+        "email:quote-a", "email:quote-b",
+    }
+    TOOLS["update_step"]["handler"](
+        app, run_id, {"step_id": "step-1", "status": "done", "evidence": "email:quote-b"}
+    )
+    TOOLS["update_step"]["handler"](
+        app, run_id, {"step_id": "step-2", "status": "blocked", "note": "Awaiting repair"}
+    )
+    # Supplier threads are owned even when the model omits them from wake_on.
+    for thread in ("supplier-b", "supplier-a", "tenant-thread"):
+        TOOLS["sleep"]["handler"](app, run_id, {"reason": "Awaiting replies"})
+        event = agent.post("/internal/events", json={
+            "kind": "email.received", "subjects": [thread], "summary": "Reply arrived",
+        }).json()
+        assert event == {"run_id": run_id, "action": "woken"}
+        # An idle provider session must not finish a repair with open plan steps.
+        assert agent.post(f"/internal/runs/{run_id}/sync").json()["status"] == "sleeping"
+    assert len(app.state.store.snapshot()["runs"]) == 1
+    actions = list(app.state.store.snapshot()["actions"].values())
+    assert [a["tool"] for a in actions if a["tool"] in EMAIL_TOOLS] == [
+        "reply_email", "send_email", "send_email",
+    ]
+
+    before = app.state.store.snapshot()["runs"][run_id]["subjects"]
+
+    def failed_send(*args):
+        raise ValueError("Email provider unavailable")
+
+    monkeypatch.setattr(routes_email, "call_service", failed_send)
+    with pytest.raises(ValueError, match="provider unavailable"):
+        EMAIL_TOOLS["send_email"]["handler"](
+            app, run_id, {"to": ["c@example.net"], "subject": "Leak quote", "body": "Quote?"}
+        )
+    state = app.state.store.snapshot()
+    assert state["runs"][run_id]["subjects"] == before
+    assert list(state["actions"].values())[-1]["error"] == "Email provider unavailable"
+
+
 def test_plan_rules_are_enforced():
     app = create_app(store=Store(), seed=False)
     app.state.store.mutate(
@@ -226,3 +294,30 @@ def test_approved_proposal_creates_version_and_resolves_issues():
             ).status_code
             == 422
         )
+
+
+def test_admin_chat_runs_admin_agent_with_admin_grant_and_waits(agent, anthropic, monkeypatch):
+    assert agent.post("/internal/admin-chat", json={"message": "List rules"}).status_code == 503
+    monkeypatch.setenv("MANAGED_ADMIN_AGENT_ID", "agent_admin")
+    chat = agent.post("/internal/admin-chat", json={"message": "List rules"}).json()
+    assert chat["kind"] == "admin" and chat["status"] == "running"
+    session = next(b for m, p, b, _ in anthropic if p == "/v1/sessions")
+    assert session["agent"] == "agent_admin"
+    kickoff = next(b for m, p, b, _ in anthropic if p == "/v1/sessions/sesn_1/events")
+    assert kickoff["events"][0]["content"][0]["text"] == "List rules"
+    store = agent.app.state.store
+    assert store.snapshot()["mcp_sessions"][chat["id"]]["scope"] == "admin"
+
+    synced = agent.post(f"/internal/runs/{chat['id']}/sync").json()
+    assert synced["status"] == "sleeping"  # answered: waits for the admin, never "done"
+    assert not store.snapshot()["wakeups"]
+
+    reply = agent.post(
+        "/internal/admin-chat", json={"message": "Thanks", "run_id": chat["id"]}
+    ).json()
+    assert reply["status"] == "running" and reply["sessions"] == ["sesn_1"]
+    sent = [b for m, p, b, _ in anthropic if p == "/v1/sessions/sesn_1/events" and m == "POST"]
+    assert sent[-1]["events"][0]["content"][0]["text"] == "Thanks"
+    run = agent.post("/internal/runs", json={"goal": "Fix boiler"}).json()
+    refused = agent.post("/internal/admin-chat", json={"message": "Hi", "run_id": run["id"]})
+    assert refused.status_code == 422

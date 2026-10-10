@@ -93,6 +93,10 @@
       <p class="lede">Properly answers every tenant email and phone call, books the plumber, chases late rent and keeps the books balanced. You get your evenings back.</p>
 
       <form class="signup" id="signup" novalidate>
+        <label class="sr-only" for="signup-name">Your name</label>
+        <input id="signup-name" name="name" placeholder="Your name" autocomplete="name" maxlength="100" required>
+        <label class="sr-only" for="signup-company">Company</label>
+        <input id="signup-company" name="company" placeholder="Company" autocomplete="organization" maxlength="100" required>
         <label class="sr-only" for="email">Work email</label>
         <input id="email" name="email" type="email" placeholder="Your work email" autocomplete="email" required>
         <button type="submit">Hire Properly</button>

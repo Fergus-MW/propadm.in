@@ -21,6 +21,12 @@ types, imported calls and emails, change log, and configuration status. The grap
 uses a Web Worker to decode binary snapshots, persisted coordinates, and
 coalesced SSE updates. Entity edits and merges carry optimistic versions.
 
+Ticket completion requires a final answer and a detailed evidence-based reasoning
+field. The ticket editor accepts Markdown for both. Resolved and closed tickets
+offer separate `answer.md` and `reasoning.md` downloads through the authenticated
+API gateway. Historical completed tickets keep their recorded resolution and
+explicitly identify missing original reasoning.
+
 The frontend stores the upstream bearer token in an httpOnly, SameSite cookie.
 All backend traffic flows through `/api/backend/v1/*`; mutations reject foreign
 origins and SSE reconnections forward the event cursor. Browser storage is used

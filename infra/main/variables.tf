@@ -56,6 +56,12 @@ variable "posthog_project_token" {
     error_message = "Use a public project token beginning phc_, not a personal API key."
   }
 }
+variable "signup_webhook_url" {
+  description = "Chat webhook that receives each new landing signup. Empty disables it."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
 variable "posthog_host" {
   description = "PostHog ingestion host matching the project's region."
   type        = string

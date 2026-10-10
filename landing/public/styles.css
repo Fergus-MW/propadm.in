@@ -144,7 +144,7 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
 
 .signup {
   position: relative;
-  display: flex; gap: 8px; max-width: 520px; padding: 8px;
+  display: flex; flex-wrap: wrap; gap: 8px; max-width: 520px; padding: 8px;
   background: var(--sun); border: var(--line) solid var(--ink);
   box-shadow: 6px 6px 0 var(--ink);
   transition: transform .18s ease, box-shadow .18s ease;
@@ -152,7 +152,7 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
 }
 .signup:focus-within { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
 .signup input {
-  flex: 1; min-width: 0; padding: 12px 12px;
+  flex: 1 1 140px; min-width: 0; padding: 12px 12px;
   background: transparent; border: 0; border-bottom: 2px solid rgba(11, 11, 11, .35);
   font: 400 18px var(--serif); color: var(--ink); outline: none;
 }
@@ -606,7 +606,7 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
   .nav-actions .btn { padding: 9px 13px; font-size: 15px; }
   h1 { margin: 18px 0 18px; letter-spacing: -.035em; }
   .signup { flex-direction: column; box-shadow: 5px 5px 0 var(--ink); }
-  .signup input { padding: 10px 6px; }
+  .signup input { flex-basis: auto; padding: 10px 6px; }
   .scene { height: 430px; }
   .bubble { width: 100%; padding: 12px 14px 14px; }
   .bubble::before { right: 30%; }

@@ -120,6 +120,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
             routes_graph,
             routes_ledger,
             routes_ops,
+            routes_tickets,
             routes_voice,
         )
 
@@ -127,6 +128,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
             routes_graph,
             routes_ledger,
             routes_ops,
+            routes_tickets,
             routes_agent,
             routes_voice,
             routes_email,

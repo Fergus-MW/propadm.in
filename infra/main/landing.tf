@@ -52,6 +52,10 @@ resource "google_cloud_run_v2_service" "landing" {
         name  = "SIGNUPS_BUCKET"
         value = google_storage_bucket.signups[0].name
       }
+      env {
+        name  = "SIGNUP_WEBHOOK_URL"
+        value = var.signup_webhook_url
+      }
       dynamic "env" {
         for_each = local.analytics
         content {

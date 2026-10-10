@@ -14,11 +14,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from opentelemetry.trace import SpanKind
 from propadmin_core import ProviderNotConfigured
 from propadmin_core.store import identifier, now, publish
+from propadmin_core.ticket_completion import COMPLETION_INSTRUCTIONS
 from propadmin_runtime.auth import issue_token, require_internal
 from propadmin_runtime.case_output import CLOSING_INSTRUCTIONS
 from propadmin_runtime.models import Input
 from propadmin_runtime.observability import ACTIVE_TELEMETRY, current_ids, observed_run
-from propadmin_runtime.routes_agent import RunCreate
+from propadmin_runtime.routes_agent import ChatMessage, RunCreate
 from propadmin_runtime.tools_agent import MAX_SLEEP_MINUTES, plan_complete, schedule_wakeup
 from pydantic import Field
 
@@ -33,8 +34,10 @@ http = httpx.Client(timeout=30)  # tests swap in an httpx.MockTransport client
 router = APIRouter(prefix="/internal", dependencies=[Depends(require_internal)])
 
 
-def config():
+def config(admin=False):
     names = ("ANTHROPIC_API_KEY", "MANAGED_AGENT_ID", "MANAGED_ENVIRONMENT_ID", "MCP_SERVER_URL")
+    if admin:  # admin chats run a second agent definition in the same sandbox environment
+        names = (*names[:1], "MANAGED_ADMIN_AGENT_ID", *names[2:])
     values = {name: os.getenv(name) for name in names}
     missing = [name for name, value in values.items() if not value]
     if missing:
@@ -92,13 +95,14 @@ def message(text):
     return {"type": "user.message", "content": [{"type": "text", "text": text}]}
 
 
-def grant(app, run_id):
+def grant(app, run_id, admin=False):
     """Same grant record and token as mcp.grant_token, rotatable per new session of a run."""
 
     def write(state):
         state.setdefault("mcp_sessions", {})[run_id] = {
             "session_id": run_id,
-            "reason": "Managed Agents session",
+            "reason": "Admin agent chat" if admin else "Managed Agents session",
+            **({"scope": "admin"} if admin else {}),
             "created_at": now(),
             "expires_at": int(time.time()) + TOKEN_LIFETIME,
             "revoked": False,
@@ -111,8 +115,9 @@ def grant(app, run_id):
 
 def open_session(app, run, text):
     """Vault with this run's MCP bearer token, then a session of the one agent, then kickoff."""
-    cfg = config()
-    token = grant(app, run["id"])
+    admin = run.get("kind") == "admin"
+    cfg = config(admin)
+    token = grant(app, run["id"], admin)
     vault = ma(
         "POST",
         "/vaults",
@@ -134,7 +139,7 @@ def open_session(app, run, text):
         "POST",
         "/sessions",
         {
-            "agent": cfg["MANAGED_AGENT_ID"],
+            "agent": cfg["MANAGED_ADMIN_AGENT_ID" if admin else "MANAGED_AGENT_ID"],
             "environment_id": cfg["MANAGED_ENVIRONMENT_ID"],
             "vault_ids": [vault["id"]],
             "title": run["goal"][:200],
@@ -165,10 +170,13 @@ def open_session(app, run, text):
 
 
 def kickoff(run, extra=()):
+    if run.get("kind") == "admin":  # a chat: the admin's own words are the whole message
+        return "\n\n".join(extra) or run["goal"]
     lines = [
         f"Run {run['id']}. Goal: {run['goal']}",
         f"Subjects you own: {', '.join(run['subjects']) or 'none'}",
         "Call get_plan first; for multi-step work create_plan, then follow planning-and-sleeping.",
+        COMPLETION_INSTRUCTIONS,
         *extra,
     ]
     if run.get("summary"):
@@ -264,7 +272,7 @@ def tool_span_ids(app, run_id):
     )
 
 
-def create_run(app, goal, subjects, context="", case=None):
+def create_run(app, goal, subjects, context="", case=None, kind=None):
     identity = {k: v for k, v in (case or {}).items() if k != "input"}
     with app.state.telemetry.operation(
         "invoke_agent",
@@ -272,11 +280,11 @@ def create_run(app, goal, subjects, context="", case=None):
         identity=identity,
         attributes={"gen_ai.operation.name": "invoke_agent"},
     ):
-        return _create_run(app, goal, subjects, context, case)
+        return _create_run(app, goal, subjects, context, case, kind)
 
 
-def _create_run(app, goal, subjects, context, case):
-    config()  # explicit 503 before any record exists
+def _create_run(app, goal, subjects, context, case, kind=None):
+    config(kind == "admin")  # explicit 503 before any record exists
 
     def write(state):
         if case:
@@ -296,6 +304,7 @@ def _create_run(app, goal, subjects, context, case):
             "summary": "",
             "next_wake_at": None,
             "provider": provider(),
+            **({"kind": kind} if kind else {}),
             "created_at": now(),
             "updated_at": now(),
             "trace_context": current_ids(),
@@ -429,6 +438,8 @@ def sync(app, run_id):
                 entry["text"] = "".join(c.get("text", "") for c in event.get("content", []))
                 saved["summary"] = entry["text"][-2000:]
                 saved["final_message"] = entry["text"]
+            elif event.get("type") == "user.message":
+                entry["text"] = "".join(c.get("text", "") for c in event.get("content", []))
             elif event.get("type") in {"agent.mcp_tool_use", "agent.tool_use"}:
                 entry["tool"] = event.get("name")
             elif event.get("type") == "session.error":
@@ -437,7 +448,14 @@ def sync(app, run_id):
             publish(state, "agent_run.event", {"run_id": run_id, **entry})
         saved["transcript"] = saved["transcript"][-500:]
         saved["synced"] = len(events)
-        if saved["status"] == "running" and status in {"idle", "terminated"}:
+        # A just-sent message can still read idle; only settle once the agent has answered it.
+        settled = status in {"idle", "terminated"} and events[-1:] and (
+            events[-1].get("type") != "user.message"
+        )
+        if saved.get("kind") == "admin":  # chats wait for the admin, never time out or finish
+            if saved["status"] == "running" and settled:
+                saved["status"] = "sleeping"
+        elif saved["status"] == "running" and status in {"idle", "terminated"}:
             if plan_complete(state["plans"].get(saved.get("plan_id") or "")):
                 saved.update(status="done", next_wake_at=None)
                 state.setdefault("mcp_sessions", {}).get(run_id, {})["revoked"] = True
@@ -537,8 +555,39 @@ def due_wakeups(app):
     return {"woken": woken, "synced": synced, "started": started, "errors": errors}
 
 
+def chat(app, text, run_id=None):
+    """Admin chat: a new admin run, or the next message in that run's session."""
+    if not run_id:
+        return create_run(app, text[:200], [], text, kind="admin")
+    config(admin=True)
+
+    def claim(state):
+        run = state["runs"][run_id]
+        if run.get("kind") != "admin":
+            raise ValueError("Only admin chats take messages")
+        if run["status"] not in LIVE:
+            raise ValueError(f"Chat is {run['status']}; start a new one")
+        if run["status"] == "queued":
+            run["pending_messages"].append(text)
+            return None
+        run.update(status="running", updated_at=now())
+        publish(state, "agent_run.message", {"run_id": run_id})
+        return dict(run)
+
+    run = app.state.store.mutate(claim)
+    if run is None:
+        return app.state.store.snapshot()["runs"][run_id]
+    if session_alive(run):
+        ma("POST", f"/sessions/{run['session_id']}/events", {"events": [message(text)]})
+    else:  # session ended: a fresh one, seeded with what the chat last said
+        earlier = [f"Earlier in this chat you said: {run['summary']}"] if run["summary"] else []
+        open_session(app, run, kickoff(run, [*earlier, text]))
+    return app.state.store.snapshot()["runs"][run_id]
+
+
 class RunStart(RunCreate):
     pass
+
 
 
 class Event(Input):
@@ -561,6 +610,11 @@ def start_run(payload: RunStart, request: Request):
         payload.subjects,
         case=payload.case.model_dump() if payload.case else None,
     )
+
+
+@router.post("/admin-chat")
+def admin_chat(payload: ChatMessage, request: Request):
+    return chat(request.app, payload.message, payload.run_id)
 
 
 @router.post("/events")

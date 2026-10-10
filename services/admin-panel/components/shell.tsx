@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
   Building2,
+  Bot,
   BriefcaseBusiness,
   Users,
   ListTodo,
@@ -62,6 +63,7 @@ const groups = [
   {
     label: "Configure",
     items: [
+      { href: "/agent", label: "Admin agent", icon: Bot },
       { href: "/rules", label: "Edge rules", icon: GitBranch },
       { href: "/schema", label: "Entity types", icon: Blocks },
       { href: "/settings", label: "Settings", icon: Settings2 },

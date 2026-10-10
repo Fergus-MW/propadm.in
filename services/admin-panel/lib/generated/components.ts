@@ -19,9 +19,14 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        ChatMessage: {
+            message: string;
+            run_id?: string | null;
+        };
         Compile: {
             prompt: string;
         };
+        CompletionFile: "answer.md" | "reasoning.md";
         CredentialIn: {
             allowed_domains: string[];
             id?: string | null;

@@ -12,6 +12,7 @@ from .store import now, publish
 
 PROPERTY = "property:hoxton-3b"
 SKILLS = {
+    "resolve-maintenance-email": "Resolve maintenance emails",
     "rent-arrears": "Rent arrears",
     "reconcile-ledger": "Reconcile ledger",
     "contractor-invoice": "Check contractor invoice",

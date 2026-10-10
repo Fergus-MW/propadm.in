@@ -78,6 +78,8 @@ DEFINE FIELD OVERWRITE `cost_estimate` ON `ticket` TYPE option<decimal>;
 DEFINE FIELD OVERWRITE `cost_actual` ON `ticket` TYPE option<decimal>;
 DEFINE FIELD OVERWRITE `access_instructions` ON `ticket` TYPE option<string>;
 DEFINE FIELD OVERWRITE `resolution` ON `ticket` TYPE option<string>;
+DEFINE FIELD OVERWRITE `final_answer` ON `ticket` TYPE option<string>;
+DEFINE FIELD OVERWRITE `reasoning` ON `ticket` TYPE option<string>;
 DEFINE FIELD OVERWRITE `notes` ON `ticket` TYPE array<string> DEFAULT [];
 DEFINE FIELD OVERWRITE external_ids ON `ticket` TYPE object FLEXIBLE DEFAULT {};
 DEFINE FIELD OVERWRITE external_ids.* ON `ticket` TYPE string;

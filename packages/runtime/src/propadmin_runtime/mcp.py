@@ -10,9 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from propadmin_core import ConflictError, ProviderNotConfigured
 from propadmin_core.store import identifier, now, publish
+from propadmin_core.ticket_completion import COMPLETION_INSTRUCTIONS
 from pydantic import Field
 
-from . import routes_agent, routes_browser, routes_email, routes_voice, tools_ledger
+from . import routes_agent, routes_browser, routes_email, routes_voice, tools_admin, tools_ledger
 from .auth import issue_token, require_admin, require_internal, require_session
 from .models import Input
 from .observability import current_ids
@@ -26,6 +27,7 @@ INSTRUCTIONS = (
     "Use this single endpoint for every graph read and write. Read entity versions before "
     "writes; re-read on conflicts. Supply a reason for mutations. Rules are admin-only. "
     "Local mode does not execute raw SurrealQL or external communications."
+    " " + COMPLETION_INSTRUCTIONS
 )
 
 
@@ -119,13 +121,14 @@ TOOLS = [
     ),
     tool(
         "upsert_entity",
-        "Create an entity, or update the explicit id with its current version.",
+        "Create an entity, or update the explicit id with its current version. "
+        + COMPLETION_INSTRUCTIONS,
         {**WRITE_FIELDS, "id": ID, "type": string(100), "version": integer(), "reason": REASON},
         ["type", "name", "reason"],
     ),
     tool(
         "update_entity",
-        "Update declared entity fields using optimistic concurrency.",
+        "Update declared entity fields using optimistic concurrency. " + COMPLETION_INSTRUCTIONS,
         {**WRITE_FIELDS, "id": ID, "version": integer(), "reason": REASON},
         ["id", "version", "reason"],
     ),
@@ -185,6 +188,18 @@ TOOLS += [
     for name, entry in EXTENSIONS.items()
 ]
 CATALOGUE = {item["name"]: item for item in TOOLS}
+# Admin chat runs hold an admin-scoped grant: every tool above plus the whole admin API.
+ADMIN_TOOLS = [
+    {"name": name, "description": entry["description"], "inputSchema": entry["input_schema"],
+     "annotations": entry["annotations"]}
+    for name, entry in tools_admin.TOOLS.items()
+]
+ADMIN_CATALOGUE = {**CATALOGUE, **{item["name"]: item for item in ADMIN_TOOLS}}
+
+
+def is_admin(request, session_id):
+    grant = request.app.state.store.snapshot().get("mcp_sessions", {}).get(session_id, {})
+    return grant.get("scope") == "admin"
 
 
 def validate(value, schema, path="arguments"):
@@ -229,14 +244,16 @@ def validate(value, schema, path="arguments"):
             raise ValueError(f"{path} is out of range")
 
 
-def protect_skill(graph, entity_id=None, type_name=None):
+def protect_skill(graph, entity_id=None, type_name=None, admin=False):
+    if admin:
+        return
     if entity_id:
         type_name = graph.get_entity(entity_id)["type"]
     if type_name in {"skill", "skill_version"}:
         raise ValueError("Live skills and their versions can only be changed by an admin")
 
 
-def execute(request, name, args, session_id):
+def execute(request, name, args, session_id, admin=False):
     if name in EXTENSIONS:
         return EXTENSIONS[name]["handler"](request.app, session_id, args)
     graph = request.app.state.graph
@@ -256,11 +273,11 @@ def execute(request, name, args, session_id):
             "use search, get_entity and traverse. No query was executed."
         )
     if name == "upsert_entity":
-        protect_skill(graph, type_name=args["type"])
+        protect_skill(graph, type_name=args["type"], admin=admin)
         payload = {key: value for key, value in args.items() if key != "reason"}
         existing = request.app.state.store.snapshot()["entities"].get(args.get("id"))
         if existing:
-            protect_skill(graph, args["id"])
+            protect_skill(graph, args["id"], admin=admin)
             if existing["type"] != args["type"]:
                 raise ValueError("Entity type cannot change during upsert")
             if "version" not in payload:
@@ -275,7 +292,7 @@ def execute(request, name, args, session_id):
             raise ConflictError("Entity no longer exists; upsert version cannot create it")
         return graph.create_entity(payload, actor, reason)
     if name == "update_entity":
-        protect_skill(graph, args["id"])
+        protect_skill(graph, args["id"], admin=admin)
         return graph.update_entity(
             args["id"],
             {k: v for k, v in args.items() if k not in {"id", "reason"}},
@@ -283,17 +300,17 @@ def execute(request, name, args, session_id):
             reason,
         )
     if name == "link_entities":
-        protect_skill(graph, args["source"])
-        protect_skill(graph, args["target"])
+        protect_skill(graph, args["source"], admin=admin)
+        protect_skill(graph, args["target"], admin=admin)
         return graph.link_entities({k: v for k, v in args.items() if k != "reason"}, actor, reason)
     if name == "unlink_entities":
         edge = request.app.state.store.snapshot()["edges"][args["id"]]
-        protect_skill(graph, edge["source"])
-        protect_skill(graph, edge["target"])
+        protect_skill(graph, edge["source"], admin=admin)
+        protect_skill(graph, edge["target"], admin=admin)
         return graph.unlink_entities(args["id"], actor, reason)
     if name == "merge_entities":
-        protect_skill(graph, args["id"])
-        protect_skill(graph, args["target_id"])
+        protect_skill(graph, args["id"], admin=admin)
+        protect_skill(graph, args["target_id"], admin=admin)
         return graph.merge_entities(
             args["id"],
             args["target_id"],
@@ -332,7 +349,7 @@ def audit(request, session_id, name, args, status, error_code=None):
         state["actions"][key] = {
             "id": key,
             "kind": "mcp.tool",
-            "tool": name if isinstance(name, str) and name in CATALOGUE else "unknown",
+            "tool": name if isinstance(name, str) and name in ADMIN_CATALOGUE else "unknown",
             "actor": f"agent_run:{session_id}",
             "session_id": session_id,
             "reason": args.get("reason", "") if isinstance(args.get("reason", ""), str) else "",
@@ -448,20 +465,23 @@ async def mcp(request: Request, session_id=Depends(require_session)):
         )
     if method == "ping":
         return result(request_id, {})
+    admin = is_admin(request, session_id)
     if method == "tools/list":
-        return result(request_id, {"tools": TOOLS, "ttlMs": 60_000, "cacheScope": "private"})
+        tools = TOOLS + ADMIN_TOOLS if admin else TOOLS
+        return result(request_id, {"tools": tools, "ttlMs": 60_000, "cacheScope": "private"})
     if method != "tools/call":
         return rpc_error(request_id, -32601, "Method not found", 404)
     name, args = params.get("name"), params.get("arguments", {})
     run = request.app.state.store.snapshot()["runs"].get(session_id, {"id": session_id})
     telemetry = request.app.state.telemetry
-    tool_name = name if isinstance(name, str) and name in CATALOGUE else "unknown"
+    catalogue = ADMIN_CATALOGUE if admin else CATALOGUE
+    tool_name = name if isinstance(name, str) and name in catalogue else "unknown"
     with telemetry.for_run(
         run, f"execute_tool {tool_name}", {"name": name, "arguments": args, "request_id": request_id,
                                          "request_trace_id": current_ids().get("trace_id")},
         attributes={"gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": tool_name},
     ) as outcome:
-        response = call_tool(request, session_id, request_id, name, args)
+        response = await call_tool(request, session_id, request_id, name, args, admin)
         body = json.loads(response.body)
         result_body = body.get("result", {})
         outcome["result"] = result_body.get("structuredContent", body)
@@ -470,15 +490,19 @@ async def mcp(request: Request, session_id=Depends(require_session)):
         return response
 
 
-def call_tool(request, session_id, request_id, name, args):
-    if not isinstance(name, str) or name not in CATALOGUE or not isinstance(args, dict):
+async def call_tool(request, session_id, request_id, name, args, admin=False):
+    catalogue = ADMIN_CATALOGUE if admin else CATALOGUE
+    if not isinstance(name, str) or name not in catalogue or not isinstance(args, dict):
         audit(
             request, session_id, name, args if isinstance(args, dict) else {}, "failed", "invalid"
         )
         return rpc_error(request_id, -32602, "Unknown tool or invalid arguments")
     try:
-        validate(args, CATALOGUE[name]["inputSchema"])
-        payload = execute(request, name, args, session_id)
+        validate(args, catalogue[name]["inputSchema"])
+        if name in tools_admin.TOOLS:
+            payload = await tools_admin.call(request.app, name, args)
+        else:
+            payload = execute(request, name, args, session_id, admin)
     except (KeyError, ValueError, ProviderNotConfigured) as exc:
         code = "conflict" if isinstance(exc, ConflictError) else "invalid"
         if isinstance(exc, KeyError):

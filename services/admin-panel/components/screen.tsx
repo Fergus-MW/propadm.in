@@ -7,6 +7,7 @@ import { Actions, Communications } from "./screens/operations";
 import { Header } from "./common";
 import { Properties, Landlords, Unallocated } from "./screens/properties";
 import { Providers } from "./screens/providers";
+import { AdminAgent } from "./screens/admin-agent";
 import Link from "next/link";
 export function Screen({ route }: { route: string[] }) {
   const [section, id] = route;
@@ -45,6 +46,8 @@ export function Screen({ route }: { route: string[] }) {
       return <Communications email />;
     case "settings":
       return <Settings />;
+    case "agent":
+      return <AdminAgent />;
     default:
       return (
         <>

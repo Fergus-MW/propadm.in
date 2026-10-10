@@ -162,6 +162,16 @@ def seed_demo(store):
                     "tags": ["leak", "hoxton"],
                     "cost_actual": 95,
                     "resolution": "Moss Plumbing replaced the waste trap and tested for leaks.",
+                    "final_answer": "Moss Plumbing replaced the waste trap and tested for leaks.",
+                    "reasoning": (
+                        "# Synthetic repair record\n\n"
+                        "1. The fixture records a kitchen sink leak reported on 21 September 2026.\n"
+                        "2. Its resolution states that Moss Plumbing replaced the waste trap "
+                        "and tested for leaks.\n"
+                        "3. The recorded resolution time is 23 September 2026 at 14:00 UTC "
+                        "and the actual cost is £95.\n\n"
+                        "This is synthetic seed data; no live repair was executed or independently verified."
+                    ),
                 },
             },
             {

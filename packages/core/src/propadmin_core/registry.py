@@ -89,6 +89,8 @@ def default_types():
             "cost_actual": field("option<decimal>"),
             "access_instructions": field("text"),
             "resolution": field("text"),
+            "final_answer": field("text"),
+            "reasoning": field("text"),
             "notes": field("array<text>"),
         },
         "email": {
