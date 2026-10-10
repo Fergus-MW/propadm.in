@@ -282,7 +282,7 @@ def seed_demo(store):
         publish(state, "demo.seeded", {"entities": len(records), "mode": "synthetic-offline"})
 
     store.mutate(seed_entities)
-    ingestion = IngestionService(store)
+    ingestion = IngestionService(store, extraction_provider="local")
     source = """# CRM snapshot · Ember Property Management
 Aisha Khan (TEN-031), aisha.khan@example.net, +447700900101 lives at Flat 3B, 24 Hoxton Street.
 Daniel Moss works at Moss Plumbing & Heating, daniel@mossplumbing.example.

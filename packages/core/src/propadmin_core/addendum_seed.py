@@ -67,7 +67,7 @@ def seed_addendum(store):
     store.mutate(seed_skills)
     if store.snapshot().get("addendum_seeded"):
         return
-    ingestion = IngestionService(store)
+    ingestion = IngestionService(store, extraction_provider="local")
     common = {"property_type": "flat", "bedrooms": 2, "bathrooms": 1,
               "city": "London", "building_name": "Hoxton House", "postcode": "N1 6SH",
               "rent_amount_minor": 95000, "rent_frequency": "monthly", "rent_due_day": 1,
