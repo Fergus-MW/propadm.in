@@ -1,0 +1,48 @@
+services/admin-panel/components/portal/maintenance.tsx
+  s_904e65f30f81df::t_a4e0b9e4e45ebe 18,139,162,168-170,185,200,209-211,266,277
+  s_904e65f30f81df::t_118ce2e25875af 283,294
+packages/runtime/src/propadmin_runtime/portal_data.py
+  s_904e65f30f81df::t_a4e0b9e4e45ebe 352-355
+  s_904e65f30f81df::t_af0550e8cee95b 6-7,304-307,351,356-357,361-368,373-379
+  s_904e65f30f81df::t_4dce17bc838700 25,286
+tests/test_portal.py
+  s_904e65f30f81df::t_d72e15b8b41b70 369-375,377-395,398-480,484,486,489,497
+  s_904e65f30f81df::t_c9741cab747a17 376,396-397,481-483,485,487-488,490-496,498-500
+services/admin-panel/components/portal/emergency-controls.tsx
+  s_904e65f30f81df::t_a4e0b9e4e45ebe 1-15,17-50
+  s_904e65f30f81df::t_72041d985a4334 16
+packages/runtime/src/propadmin_runtime/portal_emergency.py
+  s_904e65f30f81df::t_a4e0b9e4e45ebe 14,32-39
+  s_904e65f30f81df::t_af0550e8cee95b 1-13,15-23,25-31,40-54
+  s_904e65f30f81df::t_7212f02d6d1004 24
+packages/runtime/src/propadmin_runtime/portal_policy.py
+  s_904e65f30f81df::t_af0550e8cee95b 84
+  s_904e65f30f81df::t_a4e0b9e4e45ebe 102-106
+packages/runtime/src/propadmin_runtime/routes_portal.py
+  s_904e65f30f81df::t_af0550e8cee95b 14,34-35,103-114,117,193,198,215-217,222-226,244-246
+  s_904e65f30f81df::t_a4e0b9e4e45ebe 89-101,168-173,199-203
+docs/portal-edge-cases.md
+  s_904e65f30f81df::t_61d71618736cd5 1-26
+docs/portal.md
+  s_904e65f30f81df::t_ce55d402e51124 35-59
+services/admin-panel/lib/generated/components.ts
+  s_904e65f30f81df::t_7adea65421e69b 90
+services/admin-panel/lib/portal.ts
+  s_904e65f30f81df::t_a6fac192b30ad2 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fc71c41093ddd3d6b46df252c34059c6a639d817",
+  "prompts": {},
+  "sessions": {
+    "s_904e65f30f81df": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12648-215a-7c82-85ad-0acb5b338272",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
