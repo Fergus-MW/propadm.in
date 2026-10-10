@@ -1,0 +1,245 @@
+# Active repository is shared local JSON. Surreal profile validates schema only.
+name: propadmin
+services:
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8000:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8001:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  admin-panel:
+    build:
+      context: .
+      dockerfile: services/admin-panel/Dockerfile
+    environment:
+      API_URL: http://api:8080
+      PORT: '3000'
+      HOSTNAME: 0.0.0.0
+    ports:
+    - 127.0.0.1:3000:3000
+    depends_on:
+      api:
+        condition: service_healthy
+  surrealdb:
+    image: surrealdb/surrealdb:v3.0.0
+    profiles:
+    - surreal
+    command:
+    - start
+    - --user
+    - root
+    - --pass
+    - ${SURREAL_PASSWORD:-local-surreal}
+    - surrealkv:/data/database
+    ports:
+    - 127.0.0.1:8008:8000
+    volumes:
+    - surreal-data:/data
+    user: 0:0
+  rules:
+    build:
+      context: .
+      dockerfile: services/rules/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8002:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8003:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  voice:
+    build:
+      context: .
+      dockerfile: services/voice/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8004:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  email:
+    build:
+      context: .
+      dockerfile: services/email/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8005:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  browser:
+    build:
+      context: .
+      dockerfile: services/browser/Dockerfile
+    environment:
+      PORT: '8080'
+      PROPADMIN_MODE: local
+      PROPADMIN_DATA_PATH: /data/state.json
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-propadmin-local}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-local-internal-token}
+      TOKEN_SECRET: ${TOKEN_SECRET:-local-development-signing-key}
+      PUBLIC_API_URL: http://api:8080
+      RULES_SERVICE_URL: http://rules:8080
+      AGENT_SERVICE_URL: http://agent:8080
+      VOICE_SERVICE_URL: http://voice:8080
+      EMAIL_SERVICE_URL: http://email:8080
+      BROWSER_SERVICE_URL: http://browser:8080
+    volumes:
+    - propadmin-data:/data
+    ports:
+    - 127.0.0.1:8006:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+volumes:
+  propadmin-data: {}
+  surreal-data: {}

@@ -1,0 +1,13 @@
+project_id = "your-unique-propadmin-project"
+build_service_account = "propadmin-build@your-unique-propadmin-project.iam.gserviceaccount.com"
+# Each image must already exist in Artifact Registry.
+images = {
+  admin-panel = "europe-west1-docker.pkg.dev/PROJECT/propadmin/admin-panel:COMMIT"
+  api = "europe-west1-docker.pkg.dev/PROJECT/propadmin/api:COMMIT"
+  ingestion = "europe-west1-docker.pkg.dev/PROJECT/propadmin/ingestion:COMMIT"
+}
+# Leave false until a shared durable repository supports all runtime methods.
+enable_runtime = false
+# domain_services = { "app.withproperly.com" = "admin-panel", "api.withproperly.com" = "api" }
+# dns_records = { dmarc = { name = "_dmarc.withproperly.com.", type = "TXT", rrdatas = ["\"v=DMARC1; p=none\""] } }
+# Add AgentMail's actual MX/SPF/DKIM values once domain setup returns them.

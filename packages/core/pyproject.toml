@@ -1,0 +1,16 @@
+[project]
+name = "propadmin-core"
+version = "0.1.0"
+description = "Typed graph, ingestion, rules and search for Propadmin"
+requires-python = ">=3.12"
+dependencies = ["pypdf>=6,<7"]
+
+[project.optional-dependencies]
+providers = ["google-auth>=2.40", "requests>=2.32"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/propadmin_core"]

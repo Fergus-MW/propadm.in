@@ -1,0 +1,11 @@
+{
+  "name": "propadmin-workspace",
+  "private": true,
+  "packageManager": "pnpm@10.18.0",
+  "scripts": {
+    "dev": "pnpm --filter @propadmin/admin-panel dev",
+    "test": "pnpm --filter @propadmin/admin-panel test",
+    "typecheck": "pnpm --filter @propadmin/admin-panel typecheck",
+    "build": "pnpm --filter @propadmin/admin-panel build"
+  }
+}

@@ -1,0 +1,27 @@
+# Local credentials and runtime state
+.env
+.env.*
+!.env.example
+.data/
+.artifacts/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+# Terraform provider caches and state
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+.DS_Store
+# Original export archive; the extracted design system is versioned.
+/propadmin-design-system-*.zip

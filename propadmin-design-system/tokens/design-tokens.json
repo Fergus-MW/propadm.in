@@ -1,0 +1,194 @@
+{
+  "source": "styles/globals.css",
+  "note": "CSS expressions are preserved; later definitions override earlier ones within a scope. This is not a DTCG token format.",
+  "definitions": [
+    {
+      "scope": ":root",
+      "variables": {
+        "--palette-brand": "#5a18ff",
+        "--palette-info": "#00adfc",
+        "--palette-success": "#00c4b3",
+        "--palette-warning": "#ff8262",
+        "--palette-danger": "#e5484d",
+        "--palette-canvas": "#ffffff",
+        "--palette-ink": "#0a0a0a",
+        "--palette-line": "#e5e5e5"
+      }
+    },
+    {
+      "scope": ".dark",
+      "variables": {
+        "--palette-canvas": "#0a0a0a",
+        "--palette-ink": "#fafafa",
+        "--palette-line": "#ffffff1a"
+      }
+    },
+    {
+      "scope": "@theme inline",
+      "variables": {
+        "--color-background": "var(--background)",
+        "--color-foreground": "var(--foreground)",
+        "--font-sans": "var(--font-geist-sans)",
+        "--font-mono": "var(--font-geist-mono)",
+        "--color-sidebar-ring": "var(--sidebar-ring)",
+        "--color-sidebar-border": "var(--sidebar-border)",
+        "--color-sidebar-accent-foreground": "var(--sidebar-accent-foreground)",
+        "--color-sidebar-accent": "var(--sidebar-accent)",
+        "--color-sidebar-primary-foreground": "var(--sidebar-primary-foreground)",
+        "--color-sidebar-primary": "var(--sidebar-primary)",
+        "--color-sidebar-foreground": "var(--sidebar-foreground)",
+        "--color-sidebar": "var(--sidebar)",
+        "--color-chart-5": "var(--chart-5)",
+        "--color-chart-4": "var(--chart-4)",
+        "--color-chart-3": "var(--chart-3)",
+        "--color-chart-2": "var(--chart-2)",
+        "--color-chart-1": "var(--chart-1)",
+        "--color-ring": "var(--ring)",
+        "--color-input": "var(--input)",
+        "--color-border": "var(--border)",
+        "--color-destructive": "var(--destructive)",
+        "--color-destructive-subtle": "var(--destructive-subtle)",
+        "--color-brand": "var(--brand)",
+        "--color-brand-subtle": "var(--brand-subtle)",
+        "--color-tier-1": "var(--tier-1)",
+        "--color-tier-2": "var(--tier-2)",
+        "--color-info": "var(--info)",
+        "--color-info-subtle": "var(--info-subtle)",
+        "--color-success": "var(--success)",
+        "--color-success-subtle": "var(--success-subtle)",
+        "--color-warning": "var(--warning)",
+        "--color-warning-subtle": "var(--warning-subtle)",
+        "--color-accent-foreground": "var(--accent-foreground)",
+        "--color-accent": "var(--accent)",
+        "--color-muted-foreground": "var(--muted-foreground)",
+        "--color-success-text": "var(--success-text)",
+        "--color-info-text": "var(--info-text)",
+        "--color-warning-text": "var(--warning-text)",
+        "--color-destructive-text": "var(--destructive-text)",
+        "--color-placeholder": "var(--placeholder)",
+        "--color-scrim": "var(--scrim)",
+        "--color-viz-canvas": "var(--viz-canvas)",
+        "--color-muted": "var(--muted)",
+        "--color-secondary-foreground": "var(--secondary-foreground)",
+        "--color-secondary": "var(--secondary)",
+        "--color-primary-foreground": "var(--primary-foreground)",
+        "--color-primary": "var(--primary)",
+        "--color-popover-foreground": "var(--popover-foreground)",
+        "--color-popover": "var(--popover)",
+        "--color-card-foreground": "var(--card-foreground)",
+        "--color-card": "var(--card)",
+        "--radius-sm": "calc(var(--radius) - 4px)",
+        "--radius-md": "calc(var(--radius) - 2px)",
+        "--radius-lg": "var(--radius)",
+        "--radius-xl": "calc(var(--radius) + 4px)",
+        "--radius-2xl": "calc(var(--radius) + 8px)",
+        "--radius-3xl": "calc(var(--radius) + 12px)",
+        "--radius-4xl": "calc(var(--radius) + 16px)"
+      }
+    },
+    {
+      "scope": ":root",
+      "variables": {
+        "--radius": "0.625rem",
+        "--background": "var(--palette-canvas)",
+        "--card": "var(--palette-canvas)",
+        "--popover": "var(--palette-canvas)",
+        "--sidebar": "var(--palette-canvas)",
+        "--foreground": "var(--palette-ink)",
+        "--card-foreground": "var(--palette-ink)",
+        "--popover-foreground": "var(--palette-ink)",
+        "--secondary-foreground": "var(--palette-ink)",
+        "--accent-foreground": "var(--palette-ink)",
+        "--sidebar-foreground": "var(--palette-ink)",
+        "--sidebar-accent-foreground": "var(--palette-ink)",
+        "--muted-foreground": "var(--palette-ink)",
+        "--muted": "color-mix(in oklab, var(--palette-ink) 4%, var(--palette-canvas))",
+        "--secondary": "var(--muted)",
+        "--sidebar-accent": "var(--muted)",
+        "--accent": "color-mix(in oklab, var(--palette-ink) 8%, var(--palette-canvas))",
+        "--border": "var(--palette-line)",
+        "--input": "var(--palette-line)",
+        "--sidebar-border": "var(--palette-line)",
+        "--ring": "color-mix(in oklab, var(--palette-ink) 38%, var(--palette-canvas))",
+        "--sidebar-ring": "var(--ring)",
+        "--primary": "color-mix(in oklab, var(--palette-ink) 92%, var(--palette-canvas))",
+        "--primary-foreground": "var(--palette-canvas)",
+        "--sidebar-primary": "var(--primary)",
+        "--sidebar-primary-foreground": "var(--palette-canvas)",
+        "--ink-soft": "color-mix( in oklab, var(--palette-ink) 45%, var(--palette-canvas) )",
+        "--placeholder": "var(--ink-soft)",
+        "--scrim": "oklch(0 0 0 / 50%)",
+        "--viz-canvas": "var(--palette-canvas)"
+      }
+    },
+    {
+      "scope": ".dark",
+      "variables": {
+        "--card": "color-mix(in oklab, var(--palette-ink) 8%, var(--palette-canvas))",
+        "--popover": "var(--card)",
+        "--sidebar": "var(--card)",
+        "--muted": "color-mix(in oklab, var(--palette-ink) 16%, var(--palette-canvas))",
+        "--accent": "color-mix(in oklab, var(--palette-ink) 24%, var(--palette-canvas))",
+        "--primary": "var(--palette-ink)",
+        "--primary-foreground": "var(--palette-canvas)"
+      }
+    },
+    {
+      "scope": ":root",
+      "variables": {
+        "--brand": "var(--palette-brand)",
+        "--info": "var(--palette-info)",
+        "--success": "var(--palette-success)",
+        "--warning": "var(--palette-warning)",
+        "--destructive": "var(--palette-danger)",
+        "--brand-subtle": "color-mix( in oklab, var(--palette-brand) 14%, var(--background) )",
+        "--info-subtle": "color-mix( in oklab, var(--palette-info) 14%, var(--background) )",
+        "--success-subtle": "color-mix( in oklab, var(--palette-success) 14%, var(--background) )",
+        "--warning-subtle": "color-mix( in oklab, var(--palette-warning) 14%, var(--background) )",
+        "--destructive-subtle": "color-mix( in oklab, var(--palette-danger) 14%, var(--background) )",
+        "--chart-1": "var(--brand)",
+        "--chart-2": "var(--info)",
+        "--chart-3": "var(--success)",
+        "--chart-4": "var(--warning)",
+        "--chart-5": "var(--destructive)",
+        "--viz-surface": "var(--background)",
+        "--viz-1": "var(--brand)",
+        "--viz-2": "var(--info)",
+        "--viz-3": "var(--success)",
+        "--viz-4": "var(--warning)",
+        "--viz-5": "color-mix(in oklab, var(--destructive) 55%, var(--ink-soft))",
+        "--viz-muted": "var(--ink-soft)",
+        "--tier-1": "var(--brand)",
+        "--tier-2": "color-mix(in oklab, var(--brand) 45%, var(--background))"
+      }
+    },
+    {
+      "scope": ".dark",
+      "variables": {
+        "--brand": "color-mix(in oklab, var(--palette-brand) 74%, var(--palette-ink))",
+        "--info": "color-mix(in oklab, var(--palette-info) 74%, var(--palette-ink))",
+        "--success": "color-mix( in oklab, var(--palette-success) 74%, var(--palette-ink) )",
+        "--warning": "color-mix( in oklab, var(--palette-warning) 74%, var(--palette-ink) )",
+        "--destructive": "color-mix( in oklab, var(--palette-danger) 74%, var(--palette-ink) )",
+        "--sidebar-primary": "var(--brand)"
+      }
+    },
+    {
+      "scope": ":root",
+      "variables": {
+        "--success-text": "color-mix( in oklab, var(--palette-success) 60%, var(--palette-ink) )",
+        "--info-text": "color-mix(in oklab, var(--palette-info) 60%, var(--palette-ink))",
+        "--warning-text": "color-mix( in oklab, var(--palette-warning) 60%, var(--palette-ink) )",
+        "--destructive-text": "color-mix( in oklab, var(--palette-danger) 80%, var(--palette-ink) )"
+      }
+    },
+    {
+      "scope": ".dark",
+      "variables": {
+        "--success-text": "color-mix( in oklab, var(--palette-success) 80%, var(--palette-ink) )",
+        "--info-text": "color-mix(in oklab, var(--palette-info) 80%, var(--palette-ink))",
+        "--warning-text": "color-mix( in oklab, var(--palette-warning) 80%, var(--palette-ink) )"
+      }
+    }
+  ]
+}

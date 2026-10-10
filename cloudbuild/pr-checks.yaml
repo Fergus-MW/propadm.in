@@ -1,0 +1,40 @@
+steps:
+  - id: python-checks
+    name: python:3.12-slim
+    entrypoint: sh
+    args:
+      - -ec
+      - |
+        pip install uv==0.11.0
+        uv sync --locked
+        uv run ruff check packages services db infra/scripts infra/tests tests
+        uv run pytest
+        uv run python infra/scripts/export_openapi.py .artifacts/openapi.json
+  - id: frontend-checks
+    name: node:22-slim
+    entrypoint: sh
+    waitFor: ['python-checks']
+    args:
+      - -ec
+      - |
+        corepack enable
+        pnpm install --frozen-lockfile
+        pnpm --dir services/admin-panel generate:api --check --schema=/workspace/.artifacts/openapi.json
+        pnpm --dir services/admin-panel test
+        pnpm --dir services/admin-panel typecheck
+        pnpm --dir services/admin-panel build
+  - id: terraform-checks
+    name: hashicorp/terraform:1.5.7
+    entrypoint: sh
+    waitFor: ['-']
+    args:
+      - -ec
+      - |
+        terraform fmt -check -recursive infra
+        terraform -chdir=infra/bootstrap init -backend=false -input=false
+        terraform -chdir=infra/bootstrap validate
+        terraform -chdir=infra/main init -backend=false -input=false
+        terraform -chdir=infra/main validate
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

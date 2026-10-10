@@ -1,0 +1,24 @@
+# Durable backend must be verified before serving a multi-instance deployment.
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ['build', '-f', 'services/agent/Dockerfile', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/propadmin/agent:$COMMIT_SHA', '.']
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/propadmin/agent:$COMMIT_SHA']
+  - id: durable-backend-gate
+    name: ubuntu:24.04
+    entrypoint: sh
+    args: ['-ec', 'test "${_DURABLE_BACKEND_VERIFIED}" = "true" || { echo "Deployment blocked: configure and verify shared durable storage first."; exit 1; }']
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'agent', '--project', '$PROJECT_ID', '--region', '${_REGION}', '--image', '${_REGION}-docker.pkg.dev/$PROJECT_ID/propadmin/agent:$COMMIT_SHA', '--min-instances', '0', '--quiet']
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/propadmin/agent:$COMMIT_SHA'
+substitutions:
+  _REGION: europe-west1
+  _DURABLE_BACKEND_VERIFIED: 'false'
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s
