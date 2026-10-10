@@ -18,6 +18,7 @@ from .financial_ingestion import (
     tenancy_candidates,
 )
 from .graph import add_edge, create_in_state, update_in_state
+from .graph_relationships import ENDPOINTS
 from .providers import ClaudeProvider
 from .registry import hard_keys, primary_types, validate_fields
 from .rules import recompute_enabled
@@ -322,21 +323,53 @@ def mention_spans(candidate, text):
 
 def ground_claude_spans(extracted, text):
     """Compute offsets from exact quotes; never accept invented or ambiguous evidence."""
-    spans = list(extracted.get("facts") or [])
-    for entity in extracted.get("entities") or []:
-        spans.extend(entity.get("mentions") or [])
-    for span in spans:
+    warnings = []
+
+    def ground(span):
         quote = span.get("text")
         if not isinstance(quote, str) or not quote:
-            raise ValueError("Claude evidence requires a nonempty exact source quote")
+            return False
         start, end = span.get("start"), span.get("end")
         if (type(start) is int and type(end) is int
                 and 0 <= start < end <= len(text) and text[start:end] == quote):
-            continue
+            return True
         start = text.find(quote)
         if start < 0 or text.find(quote, start + 1) >= 0:
-            raise ValueError("Claude evidence quote is missing or ambiguous in source text")
+            return False
         span.update(start=start, end=start + len(quote))
+        return True
+
+    entities = []
+    for index, entity in enumerate(extracted.get("entities") or []):
+        mentions = [span for span in entity.get("mentions") or [] if ground(span)]
+        if len(mentions) != len(entity.get("mentions") or []) or not mentions:
+            warnings.append(f"Discarded unsupported entity evidence at index {index}")
+        if mentions:
+            entities.append({**entity, "mentions": mentions})
+    names = {entity["name"] for entity in entities}
+    facts = []
+    for index, fact in enumerate(extracted.get("facts") or []):
+        if ground(fact) and (not fact.get("entity_name") or fact["entity_name"] in names):
+            facts.append(fact)
+        else:
+            warnings.append(f"Discarded unsupported fact evidence at index {index}")
+    if extracted.get("entities") and not entities:
+        raise ValueError("Claude evidence quotes are missing or ambiguous in source text")
+    types = {entity["name"]: entity["type"] for entity in entities}
+    relationships = []
+    for index, relation in enumerate(extracted.get("relationships") or []):
+        source, target = types.get(relation.get("source")), types.get(relation.get("target"))
+        expected = ENDPOINTS.get(relation.get("relation"))
+        allowed = relation.get("relation") in {
+            "offers", "at", "about", "mentions", "contact", "registered_as",
+            "tenant_of", "owns", "manages",
+        }
+        if (allowed and source and target and "transaction" not in {source, target}
+                and (not expected or source in expected[0] and target in expected[1])):
+            relationships.append(relation)
+        else:
+            warnings.append(f"Discarded unsupported relationship at index {index}")
+    extracted.update(entities=entities, facts=facts, relationships=relationships, warnings=warnings)
     return extracted
 
 
@@ -409,8 +442,11 @@ class IngestionService:
             if provider:
                 extracted = provider.json(
                     "Extract typed entities and facts. Return {entities:[{type,name,description,fields,mentions:"
-                    "[{start,end,text,confidence}]}],facts:[{key,value,text,start,end,entity_name,confidence}]}. "
-                    "Use zero-based exact source character spans. Use only registry fields; never invent facts. "
+                    "[{text,confidence}]}],facts:[{key,value,text,entity_name,confidence}]}. "
+                    "Return source quotes only; the application computes character offsets. "
+                    "Every mention and fact text MUST be a nonempty "
+                    "verbatim substring of the source, never a paraphrase or an abbreviated quote with ellipses. "
+                    "Omit unsupported facts. Use only registry fields; never invent facts. "
                     "Return optional relationships:[{source:entity name,relation,target:entity name,attributes:{}}]. "
                     "owns attributes include share_pct; tenant_of includes from,to,is_lead_tenant; contact includes role. "
                     "Property is one lettable unit; ticket has location_detail and an at property relationship. "
@@ -422,10 +458,19 @@ class IngestionService:
                     {
                         "text": text,
                         "filename": job["filename"],
-                        "registry": primary_registry(self.store.snapshot()),
+                        "relationship_endpoints": {
+                            key: {"source_types": sorted(value[0]), "target_types": sorted(value[1])}
+                            for key, value in ENDPOINTS.items()
+                        },
+                        "registry": {
+                            key: value for key, value in primary_registry(self.store.snapshot()).items()
+                            if key not in {r.get("type") for r in payload.get("records") or []
+                                           if r.get("type") in {"email", "call"}}
+                        },
                     },
                 )
                 extracted = ground_claude_spans(extracted, text)
+                job["extraction_warnings"] = extracted["warnings"]
             result = self.store.mutate(
                 lambda state: self._write(state, payload, text, digest, job, extracted, extractor)
             )
@@ -592,6 +637,7 @@ class IngestionService:
             entities=document["entities"],
             unallocated=document.get("unallocated", []),
             skipped_types=job["skipped_types"],
+            extraction_warnings=job.get("extraction_warnings", []),
             completed_at=now(),
         )
         recompute_enabled(state)
