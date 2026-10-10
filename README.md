@@ -377,6 +377,7 @@ Latest local results are recorded in [VERIFICATION.md](docs/VERIFICATION.md).
 | [BUILD-CONTRACT.md](docs/BUILD-CONTRACT.md) | Shared contracts between services |
 | [OBSERVABILITY.md](docs/OBSERVABILITY.md) | Tracing, case batches and evidence export |
 | [VERIFICATION.md](docs/VERIFICATION.md) | What has been verified, and how |
+| [ANSWERS/](ANSWERS/README.md) | Reality Test answers for the 30 Property Management cases, one folder per case with ANSWER.md, REASONING.md and trace.json |
 | [infra/README.md](infra/README.md) | Local supervisor, Terraform and Cloud Run deployment |
 | [design.md](design.md) | Admin panel design rules |
 | [AGENTS.md](AGENTS.md) | Rules for contributors, human or otherwise |
