@@ -7,6 +7,11 @@ export function isSameOrigin(request: NextRequest): boolean {
   // the browser actually requested, including the port.
   const expected = new URL(request.url);
   const host = request.headers.get("host");
-  if (host) expected.host = host;
+  if (host) {
+    // URL.host does not clear an existing port when the new host omits it.
+    // Cloud Run's internal :3000 must not become part of the public origin.
+    expected.port = "";
+    expected.host = host;
+  }
   return origin === expected.origin;
 }
