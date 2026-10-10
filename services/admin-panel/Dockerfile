@@ -1,9 +1,17 @@
-FROM node:24-alpine AS build
+FROM node:24-alpine AS dependencies
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY services/admin-panel/package.json ./services/admin-panel/package.json
 RUN pnpm install --frozen-lockfile
+
+FROM dependencies AS development
+COPY services/admin-panel/ ./services/admin-panel/
+ENV NEXT_TELEMETRY_DISABLED=1
+EXPOSE 3000
+CMD ["pnpm", "--dir", "services/admin-panel", "dev"]
+
+FROM dependencies AS build
 COPY services/admin-panel/ ./services/admin-panel/
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @propadmin/admin-panel build

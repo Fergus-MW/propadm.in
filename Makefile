@@ -7,7 +7,7 @@ dev:
 	uv run python infra/scripts/dev.py
 
 dev-docker:
-	docker compose up --build
+	docker compose -f compose.yaml -f compose.dev.yaml up --build --renew-anon-volumes
 
 stop:
 	docker compose down
@@ -39,6 +39,7 @@ infra-check:
 	terraform -chdir=infra/main init -backend=false -input=false
 	terraform -chdir=infra/main validate
 	docker compose config --quiet
+	docker compose -f compose.yaml -f compose.dev.yaml config --quiet
 
 schema-check:
 	uv run python db/schema/generate.py

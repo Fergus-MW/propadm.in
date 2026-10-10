@@ -199,7 +199,7 @@ def build(app):
                     {
                         "username": name,
                         "domain": domain(),
-                        "display_name": f"Propadmin {name}",
+                        "display_name": f"Properly {name}",
                         "client_id": f"propadmin-{name}@{domain()}",
                     },
                 )

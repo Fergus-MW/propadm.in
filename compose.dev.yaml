@@ -1,0 +1,54 @@
+# Opt-in local development; compose.yaml and Cloud Run images remain production-like.
+x-python-development: &python-development
+  command:
+    - sh
+    - -c
+    - >-
+      exec uvicorn app.main:app --host 0.0.0.0 --port $${PORT:-8080}
+      --reload --reload-dir app
+      --reload-dir /app/packages/core/src
+      --reload-dir /app/packages/runtime/src
+      --reload-dir /app/db --reload-include '*.yaml'
+  environment:
+    WATCHFILES_FORCE_POLLING: 'true'
+  volumes:
+    - ./services:/app/services:ro
+    - ./packages:/app/packages:ro
+    - ./db:/app/db:ro
+
+services:
+  api:
+    <<: *python-development
+  ingestion:
+    <<: *python-development
+  rules:
+    <<: *python-development
+  agent:
+    <<: *python-development
+  voice:
+    <<: *python-development
+  email:
+    <<: *python-development
+  browser:
+    <<: *python-development
+  admin-panel:
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          require('http').get('http://127.0.0.1:3000/api/session', response =>
+          process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./services/admin-panel:/app/services/admin-panel
+      # Keep Linux dependencies and the dev cache separate from host installs/builds.
+      - /app/services/admin-panel/node_modules
+      - /app/services/admin-panel/.next

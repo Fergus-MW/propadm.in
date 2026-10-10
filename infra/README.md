@@ -26,7 +26,13 @@ storage is suitable for local development only.
 runs Python lint, frontend types/build, Terraform checks and Compose validation.
 Run these locally before pushing a PR, and record commands/results in its body.
 
-`make dev-docker` builds the same three services with a shared local data volume.
+`make dev-docker` starts all eight services with a shared local data volume,
+source bind mounts, Python reloaders (including shared packages) and Next.js Fast
+Refresh. It uses `compose.dev.yaml`; bare Compose uses the production-like images.
+Only run one application stack at a time. Port overrides such as
+`BROWSER_PORT=8007 make dev-docker` also work for containers. Dependency changes
+require rerunning the command; container dependency/cache volumes are refreshed
+without deleting application data.
 The optional `docker compose --profile surreal up -d surrealdb` starts SurrealDB
 3.0.0 on localhost:8008 for database development. It does not change the active
 application repository. To create the local namespace and apply the schema:

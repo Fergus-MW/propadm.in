@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from propadmin_core import Store
 from propadmin_core.graph import add_edge
+from propadmin_core.provider_directory import refresh_metrics
 from propadmin_runtime.auth import issue_token
 from propadmin_runtime.config import Settings
 from propadmin_runtime.factory import create_app
@@ -48,6 +49,40 @@ def write_transaction(client, property_id, kind, category, amount, **fields):
             },
         },
     )
+
+
+@pytest.mark.parametrize("type_name", ["property", "service_provider"])
+def test_undo_restores_editable_fields_without_writing_derived_values(app_client, type_name):
+    client, app, store = app_client
+    if type_name == "property":
+        entity = make_property(app)
+        write_transaction(client, entity["id"], "payment", "landlord_contribution", 12345)
+        entity = app.state.graph.get_entity(entity["id"])
+    else:
+        response = client.post(
+            "/v1/providers",
+            json={"type": type_name, "name": "Undo provider",
+                  "fields": {"ref": "UNDO-SP", "trading_name": "Undo provider"}},
+        )
+        assert response.status_code == 201
+        entity = response.json()
+        store.mutate(refresh_metrics)
+        entity = app.state.graph.get_entity(entity["id"])
+    schema = app.state.store.snapshot()["entity_types"][type_name]["fields"]
+    derived = {k: v for k, v in entity["fields"].items() if schema[k].get("read_only")}
+    assert derived
+    changed = client.patch(
+        f"/v1/entities/{entity['id']}",
+        json={"version": entity["version"], "name": "Edited name", "reason": "Undo probe"},
+    )
+    assert changed.status_code == 200
+    action = next(a for a in client.get("/v1/actions").json()["items"]
+                  if a.get("reason") == "Undo probe")
+    undone = client.post(f"/v1/actions/{action['id']}/undo")
+    assert undone.status_code == 200
+    assert undone.json()["name"] == entity["name"]
+    assert {k: undone.json()["fields"][k] for k in derived} == derived
+    assert client.post(f"/v1/actions/{action['id']}/undo").status_code == 409
 
 
 def test_ledger_http_auth_status_and_generic_write_boundaries(app_client):

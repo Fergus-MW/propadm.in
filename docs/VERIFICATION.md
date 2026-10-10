@@ -1,5 +1,87 @@
 # Local verification
 
+## Properly rebrand
+
+Rebranded on 10 October 2026: login/sidebar wordmark, browser title/application
+metadata, SVG favicon, statement PDF footer/title, API documentation and external
+service display names. Existing technical identifiers and stored sessions remain
+compatible. Mobile QA also found and fixed dashboard grid sizing that let the
+activity table widen the page.
+
+Verified the running Docker stack in Chrome: login/logout, the Properly wordmark,
+favicon/metadata, keyboard focus, light/dark themes, 390px mobile navigation and
+page width, and authenticated statement download. The PDF's title/footer were
+checked through extraction and visual rendering. No browser JavaScript errors
+were observed. Artifacts and the smoke script are in `/tmp/properly-rebrand/`
+and `/tmp/properly-rebrand-qa.py`.
+
+Passed: 14 focused Python tests (API, statement, email and agent), 17 frontend
+tests, Python/frontend lint, type checking, the final production build and
+generated API contract validation. All eight containers remain healthy in one
+development stack.
+
+Before pushing, integrated the newer landing-page and submission-checklist
+commits from `origin/main`. `make check` passed on the combined tree: 70 Python,
+17 admin-panel and four landing-server tests, types, production build, Python
+lint, Terraform/Compose validation and generated API contracts. Separately,
+`pnpm --dir services/admin-panel lint` passed.
+
+## Repeat E2E verification and local hot reload
+
+Rechecked on 10 October 2026 after adding local hot reload. **33 live
+browser/HTTP scenarios passed**, alongside `make check`: **70 Python tests**,
+**17 frontend tests**, Python lint, frontend types/production build, both Compose
+configurations, Terraform validation and generated API contracts. Frontend ESLint
+also passed. The Python suite retains the upstream Starlette TestClient warning.
+
+The running application is now one Docker development stack, using
+`compose.yaml` plus `compose.dev.yaml`. The previous native stack was stopped
+before containers started. All eight containers are healthy; the admin panel is
+at http://127.0.0.1:3000, API at :8000, and browser adapter at :8007 because an
+unrelated container occupies :8006. Start it again with
+`BROWSER_PORT=8007 make dev-docker`; login remains `propadmin-local`.
+Native `.data/state.json` was retained; Docker uses its named data volume.
+
+Live checks covered:
+
+- Incorrect passwords, loopback login, HttpOnly session cookies, origin protection
+  and logout; all 16 main desktop pages.
+- Property balances, rent ledger filtering and bank-source span highlighting;
+  authenticated PDF downloads and sourced provider prices/accreditations.
+- Browser ingestion/document viewing, hybrid search citations, shared worker/API
+  persistence and duplicate-source idempotence; saved edge-rule previews.
+- Binary graph format, visible WebGL rendering, property transaction visibility,
+  node inspection and live graph updates without refreshing the page.
+- Optimistic edit conflicts, audited undo and repeat-undo conflict protection.
+- 390 × 844 property/provider layouts without document overflow, mobile
+  navigation, light/dark themes and no uncaught browser JavaScript or server errors.
+- Session-scoped MCP ledger access and revocation; non-API services reject `/mcp`.
+  Unconfigured agent, voice, email and browser providers return explicit 503s.
+
+Testing exposed an undo regression on entities with calculated fields. Undo now
+omits schema-declared read-only fields; two focused regression cases verify
+property balances and provider metrics remain intact while names are restored.
+Next.js development resources also needed `127.0.0.1` in `allowedDevOrigins`
+when the server binds to `0.0.0.0` inside Docker.
+
+Hot reload was exercised with real, temporary source edits and restored afterward:
+
+- Native `make dev`: a shared runtime edit restarted all seven Python services.
+- Docker: an API-only edit reloaded that service; a shared runtime edit reloaded
+  all seven services without recreating containers.
+- Next.js: a component edit changed the open browser through Fast Refresh;
+  a marker in the page context survived, confirming no full-page reload.
+
+The live harness, JSON results, browser trace, screenshots, PDF and logs are in
+`/tmp/propadmin-e2e-20261010/` (temporary artifacts). Commands:
+`uv run --with playwright python /tmp/propadmin-e2e-20261010/run_e2e.py` and
+`uv run --with playwright python /tmp/propadmin-e2e-20261010/test_hot_reload.py`.
+Synthetic visit-note sources and statement artifacts remain in local Docker
+data; ledger balances were verified unchanged, test edits were restored and MCP
+grants revoked. No real external provider calls or cloud deployment were tested.
+
+## Earlier baseline
+
 Verified on 10 October 2026. Addendum A was implemented across
 ledger/ingestion, provider/schema/scheduling and admin UI, then integrated and
 checked locally.

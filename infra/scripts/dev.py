@@ -189,6 +189,17 @@ def main():
                 "127.0.0.1",
                 "--port",
                 str(ports[name]),
+                "--reload",
+                "--reload-dir",
+                str(ROOT / "services" / name / "app"),
+                "--reload-dir",
+                str(ROOT / "packages/core/src"),
+                "--reload-dir",
+                str(ROOT / "packages/runtime/src"),
+                "--reload-dir",
+                str(ROOT / "db"),
+                "--reload-include",
+                "*.yaml",
             ]
             children.append(
                 (

@@ -5,7 +5,8 @@ import { Providers } from "@/components/providers";
 import { Shell } from "@/components/shell";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Propadmin — property operations",
+  title: "Properly — property operations",
+  applicationName: "Properly",
   description:
     "Connected property operations, knowledge graph and agent workspace.",
 };

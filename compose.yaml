@@ -21,7 +21,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8000:8080
+    - 127.0.0.1:${API_PORT:-8000}:8080
     healthcheck:
       test:
       - CMD
@@ -51,7 +51,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8001:8080
+    - 127.0.0.1:${INGESTION_PORT:-8001}:8080
     healthcheck:
       test:
       - CMD
@@ -70,7 +70,7 @@ services:
       PORT: '3000'
       HOSTNAME: 0.0.0.0
     ports:
-    - 127.0.0.1:3000:3000
+    - 127.0.0.1:${ADMIN_PORT:-3000}:3000
     depends_on:
       api:
         condition: service_healthy
@@ -110,7 +110,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8002:8080
+    - 127.0.0.1:${RULES_PORT:-8002}:8080
     healthcheck:
       test:
       - CMD
@@ -140,7 +140,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8003:8080
+    - 127.0.0.1:${AGENT_PORT:-8003}:8080
     healthcheck:
       test:
       - CMD
@@ -170,7 +170,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8004:8080
+    - 127.0.0.1:${VOICE_PORT:-8004}:8080
     healthcheck:
       test:
       - CMD
@@ -200,7 +200,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8005:8080
+    - 127.0.0.1:${EMAIL_PORT:-8005}:8080
     healthcheck:
       test:
       - CMD
@@ -230,7 +230,7 @@ services:
     volumes:
     - propadmin-data:/data
     ports:
-    - 127.0.0.1:8006:8080
+    - 127.0.0.1:${BROWSER_PORT:-8006}:8080
     healthcheck:
       test:
       - CMD

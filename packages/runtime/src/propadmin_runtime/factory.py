@@ -62,7 +62,7 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
                 with suppress(asyncio.CancelledError):
                     await scheduler
 
-    app = FastAPI(title=f"Propadmin {service}", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title=f"Properly {service}", version="0.1.0", lifespan=lifespan)
     app.state.settings = cfg
     app.state.store = repository
     app.state.graph = GraphService(repository)

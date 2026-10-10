@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "./ui/Button";
 import { FormInput } from "./ui/Input";
 import { State } from "./common";
+import { Wordmark } from "./wordmark";
 const groups = [
   {
     label: "Workspace",
@@ -127,9 +128,7 @@ export function Shell({ children }: { children: ReactNode }) {
     return (
       <main className="auth">
         <div className="login">
-          <Link href="/" className="wordmark">
-            propadm<span className="brand-dot">.</span>in
-          </Link>
+          <Wordmark />
           <h1>
             Your property operations,
             <br />
@@ -157,9 +156,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <aside className={mobile ? "sidebar mobile-open" : "sidebar"}>
         <div className="sidebar-brand">
-          <Link href="/" className="wordmark">
-            propadm<span className="brand-dot">.</span>in
-          </Link>
+          <Wordmark />
           <Button
             variant="ghost"
             size="icon"
@@ -196,7 +193,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className="caption">Propadmin · Operations</span>
+          <span className="caption">Properly · Operations</span>
           <div className="actions">
             <Button
               variant="ghost"

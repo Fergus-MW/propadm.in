@@ -93,13 +93,13 @@ def open_session(app, run, text):
     vault = ma(
         "POST",
         "/vaults",
-        {"display_name": f"propadmin {run['id']}", "metadata": {"run_id": run["id"]}},
+        {"display_name": f"Properly {run['id']}", "metadata": {"run_id": run["id"]}},
     )
     ma(
         "POST",
         f"/vaults/{vault['id']}/credentials",
         {
-            "display_name": "propadmin graph MCP",
+            "display_name": "Properly graph MCP",
             "auth": {
                 "type": "static_bearer",
                 "mcp_server_url": cfg["MCP_SERVER_URL"],

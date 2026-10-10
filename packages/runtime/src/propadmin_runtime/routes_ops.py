@@ -32,13 +32,18 @@ def undo(action_id: str, request: Request):
     current = request.app.state.graph.get_entity(entity_id)
     if current["version"] != change["after"]["version"]:
         raise ConflictError("Record changed after this action; cannot undo a newer edit")
+    schema = state["entity_types"][current["type"]]["fields"]
+    fields = {
+        key: value for key, value in before.get("fields", {}).items()
+        if not schema.get(key, {}).get("read_only")
+    }
     return request.app.state.graph.update_entity(
         entity_id,
         {
             "version": current["version"],
             "name": before["name"],
             "description": before.get("description", ""),
-            "fields": before.get("fields", {}),
+            "fields": fields,
             "aliases": before.get("aliases", []),
             "description_pinned": before.get("description_pinned", False),
         },

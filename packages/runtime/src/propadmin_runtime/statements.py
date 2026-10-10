@@ -84,12 +84,12 @@ def render_statement(statement):
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor("#59665b"))
-        canvas.drawString(42, 28, "Propadmin | Evidence-backed property ledger")
+        canvas.drawString(42, 28, "Properly | Evidence-backed property ledger")
         canvas.drawRightString(A4[0] - 42, 28, f"Page {document.page}")
         canvas.restoreState()
 
     SimpleDocTemplate(buffer, pagesize=A4, leftMargin=42, rightMargin=42,
-                      topMargin=38, bottomMargin=45, title="Propadmin property statement").build(
+                      topMargin=38, bottomMargin=45, title="Properly property statement").build(
         story, onFirstPage=footer, onLaterPages=footer)
     return buffer.getvalue()
 

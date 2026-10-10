@@ -1,4 +1,4 @@
-# Admin panel
+# Properly admin panel
 
 Next.js App Router, React, Tailwind v4, TanStack Query and the MIT-licensed
 `@cosmos.gl/graph` renderer. UI primitives and semantic tokens are adapted from

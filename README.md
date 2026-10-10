@@ -1,4 +1,4 @@
-# Propadmin
+# Properly
 
 A local property-operations knowledge graph with source evidence, typed entities,
 maintenance tickets, property ledgers, service providers, hybrid search, and a live admin panel.
@@ -22,6 +22,19 @@ implemented service. Open **http://127.0.0.1:3000** and sign in with
 **`propadmin-local`**. The API defaults to port 8000 and ingestion to 8001.
 Ctrl-C stops the stack. The supervisor waits for every service to become healthy
 before announcing readiness; one service failing stops the others.
+
+Both the Next.js frontend and all Python services reload when local source changes.
+Python services also watch the shared core/runtime packages and database code/schema
+YAML. Dependency or environment changes require restarting `make dev`.
+
+For containers, run `make dev-docker` instead of `make dev`; run only one stack
+at a time. This combines `compose.yaml` with `compose.dev.yaml`, mounts local
+source code, enables Uvicorn reload in every Python service, and runs Next.js in
+development mode with Fast Refresh. Container dependencies and the Next.js cache
+are isolated from host files. Rerun `make dev-docker` after dependency changes;
+the shared named data volume is retained. Ctrl-C stops the containers, and
+`make stop` removes them without deleting their data. Bare `docker compose up
+--build` still uses the production-like images without hot reload.
 
 Optional `.env` values override local defaults; shell environment values take
 precedence. `PROPADMIN_DATA_PATH` selects the persistent local data file.
