@@ -1,0 +1,35 @@
+packages/runtime/src/propadmin_runtime/portal_tanner.py
+  s_904e65f30f81df::t_2fb09c94870e35 14-18,29-49,60-63,76-95,109-127,139-147,157-184,195-202,213-223,234-249,260-279,301-306,316-319
+  s_904e65f30f81df::t_527a049b0b4367 1-4,322-328,345-346,356,371,376-379,401-403,413-414,421,427-429,461-463
+  s_904e65f30f81df::t_172f61885dd0f0 5-13,19-28,50-59,64-75,96-108,128-138,148-156,185-194,203-212,224-233,250-259,280-300,307-315,320-321,329-344,347-355,357-370,372-375,380-400,404-412,415-420,422-426,430-460
+tests/test_portal.py
+  s_904e65f30f81df::t_172f61885dd0f0 38,501-526
+packages/runtime/src/propadmin_runtime/portal_data.py
+  s_904e65f30f81df::t_172f61885dd0f0 7,182
+services/admin-panel/lib/portal.ts
+  s_904e65f30f81df::t_172f61885dd0f0 38,56-58
+services/admin-panel/components/portal/inbox.tsx
+  s_904e65f30f81df::t_172f61885dd0f0 109-113,196-198
+packages/runtime/src/propadmin_runtime/routes_portal.py
+  s_904e65f30f81df::t_172f61885dd0f0 16,64-67
+services/admin-panel/components/portal/maintenance.tsx
+  s_904e65f30f81df::t_172f61885dd0f0 162-166
+docs/portal.md
+  s_904e65f30f81df::t_ad5e75629d69f0 158-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b5097031f9887266540876035521ff33c288876a",
+  "prompts": {},
+  "sessions": {
+    "s_904e65f30f81df": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12648-215a-7c82-85ad-0acb5b338272",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
