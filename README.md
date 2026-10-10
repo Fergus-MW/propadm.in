@@ -175,6 +175,56 @@ for property identity, ledger and provider decisions.
   choose provider and more) live in the graph; agents propose changes, they do not
   edit live versions.
 
+### Autorefinement through hill climbing
+
+The workflow-tuning implementation is in development and has not yet been
+published to `main`. The process below describes that implementation.
+
+Workflow skills improve through an automated loop: **predict → grade → revise →
+validate → regress → publish**. Open **Configure → Performance tuning** (`/tuning`)
+in the admin panel and select **Start tuning**. The loop needs an imported workflow
+corpus with at least ten eligible transitions and configured model credentials.
+The default trial limit is 200 and can be changed before starting.
+
+1. **Predict:** choose a random original case and a random history cutoff whose
+   next recorded event is an agent action. A fresh evaluation-only agent receives
+   the history prefix and frozen current skills, then returns one next action and
+   a concise, evidence-based explanation. External replies are observations,
+   never prediction targets.
+2. **Grade:** Haiku compares the prediction with the recorded next action.
+   Passing requires an overall score of at least 80, no critical error, and at
+   least 80 each for action, facts, recipient/channel and sequence. Equivalent
+   wording is accepted.
+3. **Revise:** after a miss, a separate correction session uses the answer,
+   explanation and grading differences to propose one small replacement in one
+   skill. Old and new text are each limited to 2,000 characters. A new skill is
+   allowed only when no existing skill covers the workflow. Corrections must
+   generalize without storing case identifiers or reference answers.
+4. **Validate and regress:** a fresh predictor retests the failed sample with
+   the candidate, then reruns up to ten distinct previously passing samples.
+   Any miss rejects the candidate and leaves the live skills unchanged.
+5. **Publish:** a passing candidate automatically becomes a new immutable
+   skill version, with its exact edit, validation evidence, case provenance and
+   audit record. No human approval is required. Version checks prevent publishing
+   against skills that changed during testing.
+6. **Repeat:** misses and published changes reset the success streak. The loop
+   stops after ten distinct transitions pass consecutively under the same skill
+   versions, at the trial limit, on an error, or when **Stop tuning** is selected.
+
+The predictor can read other cases and current skills only through the API's
+existing `/mcp` gateway. The selected case, all its revisions, sources and derived
+records are hidden, along with prior evaluations and private tests. Email, calls,
+browser access and operational writes are unavailable; predicted actions are
+never executed. Progress is durable, so closing the browser does not stop a run.
+`make dev` starts the tuning tick inside the API; real predictions require model
+credentials, and missing configuration is reported before a job starts.
+
+Ten consecutive passes are a stopping rule, not proof of performance on unseen
+cases. Tuning uses all original corpus cases, including the older replay holdout.
+Use **Test an unseen case** for fresh JSON cases or pasted histories; these tests
+stay outside the knowledge graph, never change skills and do not count toward
+the streak. An optional reference next step enables grading.
+
 ### Models, APIs and external services
 
 | Purpose | Service | Configured by |
