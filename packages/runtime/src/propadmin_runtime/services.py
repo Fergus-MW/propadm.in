@@ -5,6 +5,8 @@ import os
 import httpx
 from propadmin_core import ProviderNotConfigured
 
+from .observability import current_ids, propagation_headers
+
 
 def service_url(name):
     url = os.getenv(f"{name.upper()}_SERVICE_URL")
@@ -21,7 +23,7 @@ def call_service(settings, name, path, payload=None, method="POST", timeout=60):
         service_url(name) + path,
         json=payload,
         timeout=timeout,
-        headers={"Authorization": f"Bearer {settings.internal_token}"},
+        headers={"Authorization": f"Bearer {settings.internal_token}", **propagation_headers()},
     )
     if response.status_code == 503:
         raise ProviderNotConfigured(
@@ -51,6 +53,7 @@ def record_action(
             "reason": reason,
             "entity_id": entity_id,
             "created_at": now(),
+            "span_id": current_ids().get("span_id"),
         }
         state["actions"][action["id"]] = action
         publish(state, "action.recorded", {"id": action["id"], "session": run_id, "tool": tool})

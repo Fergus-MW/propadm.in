@@ -93,3 +93,6 @@ frontend tests/types/build, Terraform validation and Compose configuration.
 See [verification results](docs/VERIFICATION.md),
 [shared contracts](docs/BUILD-CONTRACT.md), and
 [infrastructure instructions](infra/README.md).
+
+Cloud Run execution evidence, OpenTelemetry correlation, unattended case batches and
+the Cloud Logging export command are documented in [observability](docs/OBSERVABILITY.md).

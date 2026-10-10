@@ -25,6 +25,7 @@ from propadmin_core.provider_directory import ProviderService
 from .auth import issue_token, require_internal
 from .config import Settings
 from .models import Login
+from .observability import Telemetry, TelemetryMiddleware
 
 SERVICES = {"api", "ingestion", "rules", "agent", "voice", "email", "browser"}
 
@@ -61,8 +62,11 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
                 scheduler.cancel()
                 with suppress(asyncio.CancelledError):
                     await scheduler
+            app.state.telemetry.provider.shutdown()
 
     app = FastAPI(title=f"Properly {service}", version="0.1.0", lifespan=lifespan)
+    app.state.telemetry = Telemetry(service)
+    app.add_middleware(TelemetryMiddleware, telemetry=app.state.telemetry)
     app.state.settings = cfg
     app.state.store = repository
     app.state.graph = GraphService(repository)

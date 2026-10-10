@@ -11,6 +11,14 @@ export interface components {
             objective: string;
             run_id?: string | null;
         };
+        CaseContext: {
+            attempt_id: string;
+            batch_id: string;
+            case_id: string;
+            input?: {
+                [key: string]: unknown;
+            };
+        };
         Compile: {
             prompt: string;
         };
@@ -110,6 +118,7 @@ export interface components {
             version?: number | null;
         };
         RunCreate: {
+            case?: components["schemas"]["CaseContext"] | null;
             goal: string;
             subjects?: string[];
         };

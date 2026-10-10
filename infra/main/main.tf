@@ -30,6 +30,7 @@ locals {
         PROPADMIN_MODE                  = "cloud"
         PROPADMIN_DATA_PATH             = "gs://${module.storage.buckets["state"]}/state.json"
         GOOGLE_CLOUD_PROJECT            = var.project_id
+        OBSERVABILITY_ARTIFACT_BUCKET   = module.storage.buckets["artifacts"]
         SERVICE_BASE_URL                = local.urls[name]
         INTERNAL_CALLER_SERVICE_ACCOUNT = google_service_account.push.email
         PUBLIC_API_URL                  = local.urls["api"]
@@ -151,6 +152,18 @@ resource "google_storage_bucket_iam_member" "state" {
   bucket   = module.storage.buckets["state"]
   role     = "roles/storage.objectUser"
   member   = "serviceAccount:${google_service_account.services[each.key].email}"
+}
+
+# Evidence blobs are create-only. Runtime services cannot overwrite or delete prior evidence.
+resource "google_storage_bucket_iam_member" "evidence_writer" {
+  for_each = toset(local.python)
+  bucket   = module.storage.buckets["artifacts"]
+  role     = "roles/storage.objectCreator"
+  member   = "serviceAccount:${google_service_account.services[each.key].email}"
+  condition {
+    title      = "execution-evidence-only"
+    expression = "resource.name.startsWith(\"projects/_/buckets/${module.storage.buckets["artifacts"]}/objects/evidence/\")"
+  }
 }
 
 # Browser credentials: the API writes propadmin-credential-* secrets, the browser reads them.

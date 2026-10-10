@@ -199,6 +199,35 @@ run_stream_v1_agent_runs__run_id__stream_get: {
         };
     };
 };
+sync_run_v1_agent_runs__run_id__sync_post: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path: {
+            run_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
 wake_run_v1_agent_runs__run_id__wake_post: {
     parameters: {
         query?: never;
@@ -635,37 +664,6 @@ recompute_rule_v1_edge_rules__rule_id__recompute_post: {
         cookie?: never;
     };
     requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-compile_rule_v1_edge_rules_compile_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["Compile"];
-        };
-    };
     responses: {
         200: {
             headers: {
