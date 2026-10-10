@@ -38,20 +38,26 @@ class ClaudeProvider:
             {
                 "model": self.model,
                 "max_tokens": 8192,
-                "system": "Return one JSON object, no Markdown. " + instruction,
+                "system": "Return the requested JSON object through submit_result. " + instruction,
                 "messages": [{"role": "user", "content": json.dumps(context)}],
+                "tools": [{
+                    "name": "submit_result",
+                    "description": "Return the complete JSON result specified in the instructions.",
+                    "input_schema": {"type": "object", "additionalProperties": True},
+                }],
+                "tool_choice": {
+                    "type": "tool", "name": "submit_result", "disable_parallel_tool_use": True,
+                },
             },
             {"x-api-key": self.key, "anthropic-version": "2023-06-01"},
         )
-        text = "".join(
-            block.get("text", "") for block in response["content"] if block.get("type") == "text"
-        ).strip()
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1].rsplit("```", 1)[0]
-        try:
-            result = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise ValueError("Claude returned invalid JSON") from exc
+        if response.get("stop_reason") == "max_tokens":
+            raise ValueError("Claude extraction exceeded its output token limit")
+        results = [block.get("input") for block in response["content"]
+                   if block.get("type") == "tool_use" and block.get("name") == "submit_result"]
+        if len(results) != 1:
+            raise ValueError("Claude did not return one structured result")
+        result = results[0]
         if not isinstance(result, dict):
             raise ValueError("Claude response must be a JSON object")
         return result

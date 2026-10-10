@@ -320,10 +320,31 @@ def mention_spans(candidate, text):
     return result
 
 
+def ground_claude_spans(extracted, text):
+    """Compute offsets from exact quotes; never accept invented or ambiguous evidence."""
+    spans = list(extracted.get("facts") or [])
+    for entity in extracted.get("entities") or []:
+        spans.extend(entity.get("mentions") or [])
+    for span in spans:
+        quote = span.get("text")
+        if not isinstance(quote, str) or not quote:
+            raise ValueError("Claude evidence requires a nonempty exact source quote")
+        start, end = span.get("start"), span.get("end")
+        if (type(start) is int and type(end) is int
+                and 0 <= start < end <= len(text) and text[start:end] == quote):
+            continue
+        start = text.find(quote)
+        if start < 0 or text.find(quote, start + 1) >= 0:
+            raise ValueError("Claude evidence quote is missing or ambiguous in source text")
+        span.update(start=start, end=start + len(quote))
+    return extracted
+
+
 class IngestionService:
-    def __init__(self, store):
+    def __init__(self, store, *, extraction_provider=None):
         self.store = store
         self.embedder = EmbeddingService()
+        self.extraction_provider = extraction_provider
 
     def ingest(self, payload):
         from .financial_parsers import prepare_source
@@ -346,7 +367,7 @@ class IngestionService:
                     "Binary files require an external parser/transcriber; supply parsed text with parsed=true"
                 )
         extractor = ("local" if payload.get("origin") == "generated_statement"
-                     else os.getenv("EXTRACTION_PROVIDER", "local"))
+                     else self.extraction_provider or os.getenv("EXTRACTION_PROVIDER", "local"))
         if extractor not in ("local", "claude"):
             raise ValueError(f"Unknown extraction provider {extractor}")
         provider = ClaudeProvider() if extractor == "claude" else None
@@ -404,6 +425,7 @@ class IngestionService:
                         "registry": primary_registry(self.store.snapshot()),
                     },
                 )
+                extracted = ground_claude_spans(extracted, text)
             result = self.store.mutate(
                 lambda state: self._write(state, payload, text, digest, job, extracted, extractor)
             )
