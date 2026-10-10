@@ -79,3 +79,34 @@ def test_provider_requires_complete_structured_result(monkeypatch):
     assert requests[0]["tool_choice"]["name"] == "submit_result"
     with pytest.raises(ValueError, match="output token limit"):
         ClaudeProvider().json("Extract", {"text": "Test"})
+
+
+def test_unsupported_facts_are_discarded_and_channel_records_are_authoritative(monkeypatch):
+    monkeypatch.setenv("EXTRACTION_PROVIDER", "claude")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-only")
+    monkeypatch.setenv("PIPELINE_MODEL", "claude-test")
+
+    def extract(self, instruction, context):
+        assert "email" not in context["registry"]
+        return {"entities": [{"type": "person", "name": "Cedar Tester",
+                             "mentions": [{"text": "Cedar Tester"}]}],
+                "facts": [{"key": "notes", "value": "needs inspection",
+                           "text": "needs inspection", "entity_name": "Cedar Tester"},
+                          {"key": "notes", "text": "Not in the source"},
+                          {"key": "notes", "value": "Missing quote"}],
+                "relationships": [{"source": "Cedar Tester", "target": "Cedar Tester",
+                                   "relation": "contact", "attributes": {"role": "other"}}]}
+
+    monkeypatch.setattr(ClaudeProvider, "json", extract)
+    store = Store()
+    job = IngestionService(store).ingest({
+        "text": "Cedar Tester needs inspection", "records": [{
+            "type": "email", "name": "Inspection", "fields": {
+                "message_id": "<authoritative@example.test>", "direction": "outbound",
+                "status": "sent", "from_address": "ops@example.test", "subject": "Inspection"}}]})
+    snapshot = store.snapshot()
+    assert len(snapshot["facts"]) == 1
+    assert len(job["extraction_warnings"]) == 3
+    email = next(e for e in snapshot["entities"].values() if e["type"] == "email")
+    assert email["fields"]["direction"] == "outbound"
+    assert email["fields"]["message_id"] == "<authoritative@example.test>"
