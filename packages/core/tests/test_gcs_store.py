@@ -107,5 +107,5 @@ def test_selection_and_cloud_gate(monkeypatch, tmp_path):
     cloud = dict(mode="cloud", admin_password="p", token_secret="s", internal_token="i")
     app = create_app(settings=Settings(data_path="gs://b/state.json", **cloud), seed=False)
     assert isinstance(app.state.store, GcsStore)
-    with pytest.raises(RuntimeError, match="durable SurrealDB"):
+    with pytest.raises(RuntimeError, match="PROPADMIN_DATA_PATH=surrealdb"):
         create_app(settings=Settings(data_path=str(tmp_path / "s.json"), **cloud))

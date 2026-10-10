@@ -80,6 +80,7 @@ const groups = [
     label: "Configure",
     items: [
       { href: "/agent", label: "Admin agent", icon: Bot },
+      { href: "/tuning", label: "Performance tuning", icon: GitBranch },
       { href: "/rules", label: "Edge rules", icon: GitBranch },
       { href: "/schema", label: "Entity types", icon: Blocks },
       { href: "/settings", label: "Settings", icon: Settings2 },

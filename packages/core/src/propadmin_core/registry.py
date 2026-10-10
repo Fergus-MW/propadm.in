@@ -35,7 +35,9 @@ def field(type="string", *, enum=None, unique=False, embed=None, required=False,
 
 
 # Agent workflow records are written by agents and admins, never extracted from sources.
-NOT_PRIMARY = {"skill", "skill_version", "workflow_issue", "skill_change_proposal"}
+NOT_PRIMARY = {"skill", "skill_version", "workflow_issue", "skill_change_proposal",
+               "workflow_case", "workflow_event", "workflow_transition", "workflow_evaluation",
+               "workflow_triplet", "media_asset"}
 
 
 def primary_types(state):
@@ -209,6 +211,15 @@ def default_types():
         for name, fields in types.items()
     }
     result.update(addendum_types(field))
+    from .workflow_registry import workflow_types
+
+    result.update(workflow_types(field))
+    result["media_asset"] = {
+        "id": "media_asset", "name": "Media asset", "version": 1, "primary": False,
+        "fields": {"raw_sha256": field(unique=True), "mime": field(),
+                   "source_document": field(), "gcs_uri": field(),
+                   "description_model": field(), "token_usage": field("object")},
+    }
     return result
 
 

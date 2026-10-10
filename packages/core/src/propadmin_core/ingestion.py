@@ -23,6 +23,7 @@ from .providers import ClaudeProvider
 from .registry import hard_keys, primary_types, validate_fields
 from .rules import recompute_enabled
 from .store import ConflictError, identifier, now, publish
+from .ticket_completion import validate_completion
 
 
 def split_chunks(text, max_chars=3200, overlap=400):
@@ -373,6 +374,33 @@ def ground_claude_spans(extracted, text):
     return extracted
 
 
+def valid_media_entities(state, extracted):
+    """Keep captions/documents when an observed entity lacks mandatory canonical keys.
+
+    An image may show an address without a property reference. Preserve its source text
+    rather than inventing a reference or rejecting the whole file. Explicit admin records
+    retain strict validation; this only filters model-extracted media candidates.
+    """
+    accepted = []
+    for candidate in extracted.get("entities", []):
+        try:
+            if candidate.get("type") != "transaction":
+                fields = validate_fields(state, candidate.get("type", ""), candidate.get("fields", {}))
+                validate_completion(candidate.get("type"), fields)
+            accepted.append(candidate)
+        except ValueError as exc:
+            extracted["warnings"].append(
+                f"Retained source evidence; skipped incomplete {candidate.get('type')}: {exc}"
+            )
+    names = {candidate["name"] for candidate in accepted}
+    extracted["entities"] = accepted
+    extracted["facts"] = [fact for fact in extracted.get("facts", [])
+                          if not fact.get("entity_name") or fact["entity_name"] in names]
+    extracted["relationships"] = [relation for relation in extracted.get("relationships", [])
+                                  if {relation.get("source"), relation.get("target")} <= names]
+    return extracted
+
+
 class IngestionService:
     def __init__(self, store, *, extraction_provider=None):
         self.store = store
@@ -383,6 +411,9 @@ class IngestionService:
         from .financial_parsers import prepare_source
 
         payload = prepare_source(payload)
+        from .media import store_original
+
+        payload = store_original(payload, self.store)
         text = payload.get("text")
         if text is None and payload.get("records"):
             text = json.dumps(payload["records"], ensure_ascii=False, indent=2)
@@ -407,7 +438,10 @@ class IngestionService:
         version = payload.get("extractor_version") or (
             provider.model if provider else "local-structured-exact-v1"
         )
-        digest = hashlib.sha256(text.encode()).hexdigest()
+        # Two distinct photos can have identical captions. Their originals must not merge.
+        identity = (text + "\0" + payload["raw_sha256"]
+                    if payload.get("content_base64") and payload.get("raw_sha256") else text)
+        digest = hashlib.sha256(identity.encode()).hexdigest()
         document_id = f"source_file:{digest[:24]}"
         existing = self.store.snapshot()["documents"].get(document_id)
         if (
@@ -469,7 +503,18 @@ class IngestionService:
                         },
                     },
                 )
-                extracted = ground_claude_spans(extracted, text)
+                media = payload.get("content_base64") and (
+                    payload.get("mime") == "application/pdf" or payload.get("mime", "").startswith("image/")
+                )
+                try:
+                    extracted = ground_claude_spans(extracted, text)
+                except ValueError as exc:
+                    if not media or "missing or ambiguous" not in str(exc):
+                        raise
+                    extracted = {"entities": [], "facts": [], "relationships": [],
+                                 "warnings": ["Media source retained; model entity quotes were unsupported"]}
+                if media:
+                    extracted = valid_media_entities(self.store.snapshot(), extracted)
                 job["extraction_warnings"] = extracted["warnings"]
             result = self.store.mutate(
                 lambda state: self._write(state, payload, text, digest, job, extracted, extractor)
@@ -546,6 +591,8 @@ class IngestionService:
             "source_type": payload.get("source_type"),
             "raw_sha256": payload.get("raw_sha256"),
             "raw_content_base64": payload.get("content_base64"),
+            "raw_size": payload.get("raw_size"),
+            "multimodal": payload.get("multimodal"),
             "chunks": [],
             "mentions": [],
             "facts": [],
@@ -626,6 +673,10 @@ class IngestionService:
                 add_edge(state, entity["id"], document_id, "derived_from")
         if not financial_started:
             link_candidate_relations(state, records, resolved_names, relationships)
+        if document["mime"].startswith("image/"):
+            from .media import link_image_asset
+
+            link_image_asset(state, document, chunks, self.embedder)
         document["entities"] = list(dict.fromkeys(document["entities"]))
         for fact in (extracted or {}).get("facts", []) + payload.get("facts", []):
             self._fact(state, document, chunks, fact, text, resolved_names)

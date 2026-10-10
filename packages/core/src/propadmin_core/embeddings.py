@@ -26,9 +26,8 @@ def local_vector(text, dimensions=256):
 def cosine(a, b):
     if len(a) != len(b):
         raise ValueError("Embedding dimensions differ; rebuild the index after changing providers")
-    norm_a = math.sqrt(sum(x * x for x in a))
-    norm_b = math.sqrt(sum(x * x for x in b))
-    return sum(x * y for x, y in zip(a, b)) / (norm_a * norm_b) if norm_a and norm_b else 0.0
+    norm_a, norm_b = math.hypot(*a), math.hypot(*b)
+    return math.sumprod(a, b) / (norm_a * norm_b) if norm_a and norm_b else 0.0
 
 
 class EmbeddingService:
@@ -96,6 +95,7 @@ class EmbeddingService:
             key
             for key, entry in state["embeddings"].items()
             if entry["owner"] == owner and entry["field"] not in live_fields
+            and entry["model"] == self.model and not entry.get("index")
         ]
         for key in stale:
             del state["embeddings"][key]

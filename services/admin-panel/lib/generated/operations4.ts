@@ -639,14 +639,43 @@ transaction_status_v1_transactions__transaction_id__status_post: {
         };
     };
 };
-list_issues_v1_workflow_issues_get: {
+cases_v1_workflow_cases_get: {
     parameters: {
         query?: {
-            skill?: string | null;
-            status?: string | null;
+            dataset?: string | null;
+            split?: string | null;
         };
         header?: never;
         path?: never;
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+extract_triplets_v1_workflow_cases__case_id__triplets_post: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path: {
+            case_id: string;
+        };
         cookie?: never;
     };
     requestBody?: never;

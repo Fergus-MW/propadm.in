@@ -4,6 +4,11 @@ export function sourceMime(filename: string, reported = ""): string {
     (
       {
         pdf: "application/pdf",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        gif: "image/gif",
+        webp: "image/webp",
         csv: "text/csv",
         ofx: "application/x-ofx",
         qfx: "application/x-ofx",

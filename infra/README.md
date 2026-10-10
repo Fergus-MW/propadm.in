@@ -85,6 +85,20 @@ gcloud builds submit --config cloudbuild/images.yaml --substitutions _TAG=v1 .
 terraform -chdir=infra/main apply
 ```
 
+To apply a reviewed deployment plan through Cloud Build, first record the worker's
+provider checksum with `terraform -chdir=infra/main providers lock -platform=darwin_arm64 -platform=linux_amd64`.
+Then create it with Terraform 1.5.7
+(`terraform -chdir=infra/main plan -out=/tmp/deploy.tfplan`), upload it to a
+unique object in the private Terraform state bucket, and submit
+`cloudbuild/deploy.yaml` with `_PLAN_URI=gs://BUCKET/OBJECT` and
+`_STATE_BUCKET=BUCKET`. Specify the project's build service account with
+`--service-account=projects/PROJECT/serviceAccounts/propadmin-build@PROJECT.iam.gserviceaccount.com`
+and the project/region explicitly. This applies exactly the saved plan using
+remote state locking. Plans contain sensitive values: keep them out of source
+uploads and remove the uploaded object's versions after the build finishes.
+The build account needs permissions for the resources the plan changes;
+bootstrap includes Cloud Run and Cloud Scheduler administration.
+
 Add provider secret versions (`anthropic-api-key`, `elevenlabs-api-key`,
 `elevenlabs-webhook-secret`, `elevenlabs-tool-secret`, `agentmail-api-key`, `agentmail-webhook-secret`,
 `browserbase-api-key`) to Secret Manager and list them in `secret_versions`;

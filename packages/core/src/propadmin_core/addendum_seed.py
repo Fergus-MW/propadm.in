@@ -19,6 +19,8 @@ SKILLS = {
     "landlord-statement": "Landlord statement",
     "choose-provider": "Choose provider",
     "provider-research": "Research providers",
+    "property-case-resolution": "Resolve a property case",
+    "checkout-works": "Check-out works",
 }
 
 

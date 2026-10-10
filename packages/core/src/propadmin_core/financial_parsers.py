@@ -200,24 +200,10 @@ def prepare_source(payload):
         if len(raw) > 5_000_000:
             raise ValueError("Source exceeds the 5 MB ingestion limit")
         result["raw_sha256"] = hashlib.sha256(raw).hexdigest()
-        if result.get("mime") == "application/pdf" or result.get("filename", "").lower().endswith(".pdf"):
-            from pypdf import PdfReader
+        from .media import parse_binary
 
-            try:
-                reader = PdfReader(io.BytesIO(raw))
-                if reader.is_encrypted or len(reader.pages) > 250:
-                    raise ValueError("PDF must be unencrypted and at most 250 pages")
-                text = "\n\n".join(page.extract_text() or "" for page in reader.pages)
-            except Exception as exc:
-                raise ValueError("PDF text extraction failed; supply parsed text for this document") from exc
-            if not text.strip():
-                raise ValueError("Scanned PDF has no text layer; supply OCR text with parsed=true")
-            result.update(parsed=True, parser="pypdf-text-v1")
-        else:
-            try:
-                text = raw.decode("utf-8-sig")
-            except UnicodeDecodeError as exc:
-                raise ValueError("Source is not UTF-8 text") from exc
+        result.update(parse_binary(raw, result))
+        text = result.get("text")
     if text is not None:
         result["text"] = text
     source_type = result.get("source_type")

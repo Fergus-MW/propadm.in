@@ -149,6 +149,14 @@ def upgrade_addendum(state):
         if name not in state["entity_types"]:
             state["entity_types"][name] = copy.deepcopy(definition)
             changed = True
+        elif name.startswith("workflow_") or name == "media_asset":
+            # Deployment order must not freeze an older service's additive schema.
+            existing = state["entity_types"][name]
+            for key, spec in definition["fields"].items():
+                if key not in existing["fields"]:
+                    existing["fields"][key] = copy.deepcopy(spec)
+                    existing["version"] += 1
+                    changed = True
         elif name in {"property", "transaction", "service_provider", "service_offering", "quote"}:
             existing = state["entity_types"][name]
             if existing.get("fields") != definition["fields"] or existing.get(
@@ -263,7 +271,8 @@ def upgrade_addendum(state):
             )
             del state["edges"][edge["id"]]
             changed = True
-    refresh_property_edges(state)
+    if changed:
+        refresh_property_edges(state)
     if changed:
         publish(state, "registry.upgraded", {"addendum": "A"})
     return upgrade_ticket_completion(state, definitions, embedder or EmbeddingService()) or changed
