@@ -1,12 +1,12 @@
 // Serves the landing page from public/ and saves signup emails to a CSV file.
 // Zero dependencies: run with `node landing/server.mjs`.
 import { createServer } from "node:http";
-import { appendFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCloudSignupStore, createCsvSignupStore } from "./signup-store.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const CSV_HEADER = "created_at,email\n";
 const MAX_BODY_BYTES = 2048;
 // The first character must be alphanumeric so a saved email can never start a
 // spreadsheet formula; the character set also rules out commas and quotes in the CSV.
@@ -44,23 +44,13 @@ const readBody = (req) =>
     req.on("error", fail);
   });
 
-async function loadSavedEmails(path) {
-  await mkdir(dirname(path), { recursive: true });
-  try {
-    await writeFile(path, CSV_HEADER, { flag: "wx" });
-  } catch (error) {
-    if (error.code !== "EEXIST") throw error;
-  }
-  const rows = (await readFile(path, "utf8")).split("\n").slice(1);
-  return new Set(rows.map((row) => row.split(",")[1]).filter(Boolean));
-}
-
 export async function createLandingServer({
   publicDir = join(HERE, "public"),
   signupsPath = join(HERE, ".data", "signups.csv"),
+  signupStore,
 } = {}) {
   const root = resolve(publicDir);
-  const emails = await loadSavedEmails(signupsPath);
+  const saveSignup = signupStore ?? await createCsvSignupStore(signupsPath);
 
   async function signup(req, res) {
     if (!(req.headers["content-type"] ?? "").startsWith("application/json")) {
@@ -81,15 +71,7 @@ export async function createLandingServer({
     if (email.length > 254 || !EMAIL.test(email)) {
       return json(res, 400, { error: "That doesn't look like an email address." });
     }
-    if (emails.has(email)) return json(res, 200, { ok: true, duplicate: true });
-
-    emails.add(email); // claim it before the write so concurrent duplicates are caught
-    try {
-      await appendFile(signupsPath, `${new Date().toISOString()},${email}\n`);
-    } catch (error) {
-      emails.delete(email);
-      throw error;
-    }
+    if (!await saveSignup(email)) return json(res, 200, { ok: true, duplicate: true });
     return json(res, 201, { ok: true });
   }
 
@@ -139,9 +121,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT ?? 3001);
   const host = process.env.HOST ?? "127.0.0.1";
   const signupsPath = resolve(process.env.SIGNUPS_PATH ?? join(HERE, ".data", "signups.csv"));
-  const server = await createLandingServer({ signupsPath });
+  const bucket = process.env.SIGNUPS_BUCKET;
+  const signupStore = bucket ? createCloudSignupStore({ bucket }) : undefined;
+  const server = await createLandingServer({ signupsPath, signupStore });
   server.listen(port, host, () => {
-    console.log(`Landing page: http://${host}:${port} (signups saved to ${signupsPath})`);
+    console.log(`Landing page: http://${host}:${port} (signups saved to ${bucket ? `gs://${bucket}/signups/` : signupsPath})`);
   });
   for (const signal of ["SIGINT", "SIGTERM"]) {
     process.on(signal, () => server.close(() => process.exit(0)));

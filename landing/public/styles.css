@@ -557,7 +557,7 @@ h1 em:hover { transform: rotate(-4deg) scale(1.04); }
 }
 .foot .brand { font-size: 22px; }
 .foot .brand svg { width: 30px; height: 28px; color: var(--paper); }
-.foot nav { display: flex; gap: 24px; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 24px; }
 .foot a { text-decoration: none; opacity: .8; }
 .foot a:hover { opacity: 1; text-decoration: underline; }
 

@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createLandingServer } from "../server.mjs";
+import { createCloudSignupStore } from "../signup-store.mjs";
 
 let dir;
 let csv;
@@ -82,4 +83,71 @@ test("serves the page and health check but nothing outside public/", async () =>
   assert.equal((await fetch(`${base}/..%2fsecret.txt`)).status, 404);
   assert.equal((await fetch(`${base}/missing.css`)).status, 404);
   assert.equal((await fetch(`${base}/api/signup`)).status, 405);
+});
+
+test("cloud signups deduplicate atomically across concurrent instances", async () => {
+  const objects = new Map();
+  let credentialRequests = 0;
+  const request = async (url, options) => {
+    if (String(url).startsWith("http://metadata.google.internal/")) {
+      credentialRequests++;
+      assert.equal(options.headers["Metadata-Flavor"], "Google");
+      return Response.json({ access_token: "test-token", expires_in: 3600 });
+    }
+    assert.equal(options.headers.Authorization, "Bearer test-token");
+    const query = new URL(url).searchParams;
+    assert.equal(query.get("ifGenerationMatch"), "0");
+    const name = query.get("name");
+    assert.match(name, /^signups\/[a-f0-9]{64}\.json$/);
+    if (objects.has(name)) return new Response(null, { status: 412 });
+    objects.set(name, JSON.parse(options.body));
+    return Response.json({ generation: "1" });
+  };
+  const first = createCloudSignupStore({ bucket: "test-signups", request });
+  const second = createCloudSignupStore({ bucket: "test-signups", request });
+  assert.deepEqual(await Promise.all([first("hello@example.com"), second("hello@example.com")]), [true, false]);
+  assert.equal(await first("hello@example.com"), false);
+  assert.equal(credentialRequests, 2);
+  assert.equal(objects.size, 1);
+  assert.equal([...objects.values()][0].email, "hello@example.com");
+});
+
+test("cloud storage failures never acknowledge a signup and refresh expired credentials", async () => {
+  let credentialRequests = 0;
+  let uploadStatus = 401;
+  const request = async (url) => {
+    if (String(url).startsWith("http://metadata.google.internal/")) {
+      credentialRequests++;
+      return Response.json({ access_token: "test-token", expires_in: 3600 });
+    }
+    return new Response(null, { status: uploadStatus });
+  };
+  const save = createCloudSignupStore({ bucket: "test-signups", request });
+  await assert.rejects(save("hello@example.com"), /Signup storage unavailable \(401\)/);
+  uploadStatus = 503;
+  await assert.rejects(save("hello@example.com"), /Signup storage unavailable \(503\)/);
+  uploadStatus = 200;
+  assert.equal(await save("hello@example.com"), true);
+  assert.equal(credentialRequests, 2);
+});
+
+test("the HTTP endpoint normalises emails for a durable signup store", async () => {
+  const saved = new Set();
+  const durable = await createLandingServer({ signupStore: async (email) => {
+    if (saved.has(email)) return false;
+    saved.add(email);
+    return true;
+  } });
+  await new Promise((ready) => durable.listen(0, "127.0.0.1", ready));
+  try {
+    const post = (email) => fetch(`http://127.0.0.1:${durable.address().port}/api/signup`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    assert.equal((await post(" Hello@Example.com ")).status, 201);
+    assert.deepEqual(await (await post("hello@example.com")).json(), { ok: true, duplicate: true });
+    assert.deepEqual([...saved], ["hello@example.com"]);
+  } finally {
+    await new Promise((done) => durable.close(done));
+  }
 });
