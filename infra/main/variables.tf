@@ -82,3 +82,12 @@ variable "enable_domain_mappings" {
   type        = bool
   default     = false
 }
+variable "state_backend" {
+  description = "Shared state store: gcs (legacy single JSON object) or surrealdb (switch after migrate_state.py)."
+  type        = string
+  default     = "gcs"
+  validation {
+    condition     = contains(["gcs", "surrealdb"], var.state_backend)
+    error_message = "state_backend must be gcs or surrealdb."
+  }
+}

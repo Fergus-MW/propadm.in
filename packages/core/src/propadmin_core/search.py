@@ -36,6 +36,9 @@ class SearchService:
         self.embedder = EmbeddingService()
 
     def search(self, payload):
+        return self.store.read(lambda state: self._search(state, payload))
+
+    def _search(self, state, payload):
         start = time.perf_counter()
         query = payload.get("query", "")
         if not isinstance(query, str) or not query.strip():
@@ -45,7 +48,6 @@ class SearchService:
         limit = payload.get("limit", 20)
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
             raise ValueError("Search limit must be between one and 100")
-        state = self.store.snapshot()
         types = payload.get("types") or []
         if not isinstance(types, list) or any(
             type_name not in state["entity_types"] for type_name in types

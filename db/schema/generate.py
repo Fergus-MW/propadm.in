@@ -64,6 +64,10 @@ def generate():
             if field.get("read_only"):
                 suffix += " PERMISSIONS FOR update NONE"
             lines.append(f"DEFINE FIELD OVERWRITE `{name}` ON `{table}` TYPE {kind}{suffix};")
+            if (table.startswith("workflow_") or table == "media_asset") and field["type"] == "object":
+                lines[-1] = f"DEFINE FIELD OVERWRITE `{name}` ON `{table}` TYPE {kind} FLEXIBLE{suffix};"
+            if table.startswith("workflow_") and field["type"] == "array<object>":
+                lines.append(f"DEFINE FIELD OVERWRITE `{name}`.* ON `{table}` TYPE object FLEXIBLE;")
             if field.get("properties"):
                 prefix = f"{name}.*" if field["type"].startswith("array<") else name
                 for child, child_spec in field["properties"].items():

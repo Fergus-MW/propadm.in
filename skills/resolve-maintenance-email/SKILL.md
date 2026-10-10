@@ -7,6 +7,9 @@ description: Resolve tenant maintenance reports with prompt updates and competin
 
 Your objective is the earliest viable resolution, using qualified suppliers and sourced
 spending limits. Coordinate the tenant and all suppliers within this same run.
+Load property-case-resolution when continuing an existing case. Read prior approvals,
+troubleshooting, quotes, assignments and appointments first; continue from the outstanding
+dependency. Preserve valid existing instructions and avoid repeating completed outreach.
 
 1. Call get_plan first and create or revise the plan. Include acknowledgement, triage,
    supplier outreach, selection/booking, tenant timeline updates, completion verification,
@@ -21,12 +24,15 @@ spending limits. Coordinate the tenant and all suppliers within this same run.
    while awaiting answers. Follow applicable emergency procedures immediately.
 4. Load choose-provider and use find_providers for the trade, location and urgency. Check
    qualifications and coverage; use provider-research if the directory is insufficient.
-   Contact 2-3 suitable suppliers in separate send_email calls during this turn, before
+   For a new procurement need, contact 2-3 suitable suppliers in separate send_email calls during this turn, before
    waiting on replies. Include the ticket reference, fault/scope, location, urgency and
    access constraints; request price including VAT/callout, exclusions, earliest confirmed
    attendance and expected completion. Link every email to the ticket and provider with
    entity_ids. Share only information needed for the job; keep competing suppliers in
    separate threads. If fewer suppliers qualify, contact those available and record why.
+   If a qualified provider is already instructed within a documented approval, continue
+   that instruction. An inspection approval does not authorize replacement or extra works.
+   Send materially changed scope/cost or a requested comparison to the landlord first.
 5. Record each successful outreach and its thread/email ids in the plan. The email tools
    automatically add these conversations to this run. Before sleeping, leave the waiting
    step blocked/in_progress and include the tenant, supplier threads and ticket in wake_on.

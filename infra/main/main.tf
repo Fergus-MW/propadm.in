@@ -8,7 +8,7 @@ data "google_project" "current" {
 locals {
   python = ["api", "ingestion", "rules", "agent", "voice", "email", "browser"]
   names  = toset(concat(["admin-panel"], local.python))
-  core   = ["admin-password", "internal-service-token", "token-secret"]
+  core   = ["admin-password", "internal-service-token", "token-secret", "surreal-password"]
   analytics = {
     POSTHOG_PROJECT_TOKEN = var.posthog_project_token
     POSTHOG_HOST          = var.posthog_host
@@ -32,7 +32,12 @@ locals {
     { for name in local.python : name => merge(
       {
         PROPADMIN_MODE                  = "cloud"
-        PROPADMIN_DATA_PATH             = "gs://${module.storage.buckets["state"]}/state.json"
+        PROPADMIN_DATA_PATH             = var.state_backend == "surrealdb" ? "surrealdb" : "gs://${module.storage.buckets["state"]}/state.json"
+        STATE_BUCKET                    = module.storage.buckets["state"]
+        SURREAL_URL                     = "http://${local.surreal_ip}:8000"
+        SURREAL_NAMESPACE               = "propadmin"
+        SURREAL_DATABASE                = "propadmin"
+        SURREAL_USER                    = "root"
         GOOGLE_CLOUD_PROJECT            = var.project_id
         OBSERVABILITY_ARTIFACT_BUCKET   = module.storage.buckets["artifacts"]
         SERVICE_BASE_URL                = local.urls[name]
@@ -53,6 +58,7 @@ locals {
         EXTRACTION_PROVIDER = "claude"
         PIPELINE_MODEL      = "claude-haiku-5-5"
       } : {},
+      name == "api" ? { WORKFLOW_EMBEDDING_PROVIDER = "vertex" } : {},
       lookup(var.service_environment, name, {}),
     ) },
     { admin-panel = merge({ API_URL = local.urls["api"] }, local.analytics, lookup(var.service_environment, "admin-panel", {})) },
@@ -110,6 +116,7 @@ module "cloud_run" {
   domain_services = var.enable_domain_mappings ? var.domain_services : {}
   push_account    = google_service_account.push.email
   raw_bucket      = module.storage.buckets["raw"]
+  subnetwork      = google_compute_subnetwork.private.id
   depends_on      = [module.secrets]
 }
 module "pubsub" {
@@ -204,9 +211,10 @@ resource "google_project_iam_member" "credential_reader" {
 # and a nightly full edge recompute refreshes rules and layout.
 locals {
   schedules = {
-    agent-wakeups = { service = "agent", path = "/internal/wakeups/due", schedule = "* * * * *" }
-    rules-nightly = { service = "rules", path = "/internal/recompute", schedule = "0 3 * * *" }
-    rent-daily    = { service = "rules", path = "/internal/rent-schedule", schedule = "5 0 * * *" }
+    agent-wakeups   = { service = "agent", path = "/internal/wakeups/due", schedule = "* * * * *" }
+    workflow-tuning = { service = "api", path = "/internal/workflow-tuning/tick", schedule = "* * * * *" }
+    rules-nightly   = { service = "rules", path = "/internal/recompute", schedule = "0 3 * * *" }
+    rent-daily      = { service = "rules", path = "/internal/rent-schedule", schedule = "5 0 * * *" }
   }
 }
 resource "google_cloud_scheduler_job" "schedules" {

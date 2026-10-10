@@ -15,7 +15,7 @@ from pathlib import Path
 COLLECTIONS = (
     "entities edges documents chunks facts embeddings rules jobs runs plans wakeups "
     "actions changes skills issues proposals credentials claims invocations entity_types "
-    "resolutions rule_judgements"
+    "resolutions rule_judgements workflow_sandboxes workflow_private_evaluations workflow_tuning_jobs"
 ).split()
 
 
@@ -91,6 +91,11 @@ class Store:
     def snapshot(self):
         with self._locked():
             return copy.deepcopy(self._read())
+
+    def read(self, fn):
+        """fn(state) for pure reads; only the result is copied (SurrealStore skips the rest)."""
+        with self._locked():
+            return copy.deepcopy(fn(self._read()))
 
     def mutate(self, callback):
         with self._locked():

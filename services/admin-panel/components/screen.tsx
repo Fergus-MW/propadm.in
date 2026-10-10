@@ -8,12 +8,21 @@ import { Header } from "./common";
 import { Properties, Landlords, Unallocated } from "./screens/properties";
 import { Providers } from "./screens/providers";
 import { AdminAgent } from "./screens/admin-agent";
+import { WorkflowTuning } from "./screens/workflow-tuning";
 import Link from "next/link";
+import { SharedRepair } from "./portal/shared-repair";
+import { Portal } from "./portal/workspace";
 export function Screen({ route }: { route: string[] }) {
   const [section, id] = route;
   switch (section) {
     case undefined:
+      return <Portal />;
+    case "track":
+      return <SharedRepair token={id ?? ""} />;
+    case "overview":
       return <Overview />;
+    case "portal":
+      return <Portal section={id ?? "today"} id={route[2]} />;
     case "graph":
       return <GraphExplorer />;
     case "entities":
@@ -48,6 +57,8 @@ export function Screen({ route }: { route: string[] }) {
       return <Settings />;
     case "agent":
       return <AdminAgent />;
+    case "tuning":
+      return <WorkflowTuning id={id} />;
     default:
       return (
         <>

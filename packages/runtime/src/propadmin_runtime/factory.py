@@ -15,6 +15,7 @@ from propadmin_core import (
     ProviderNotConfigured,
     RuleService,
     SearchService,
+    SurrealStore,
     open_store,
     seed_demo,
 )
@@ -35,10 +36,10 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
         raise ValueError(f"Unknown service {service!r}")
     cfg = settings or Settings()
     repository = store if store is not None else open_store(cfg.data_path)
-    if cfg.mode == "cloud" and store is None and not isinstance(repository, GcsStore):
+    if cfg.mode == "cloud" and store is None and not isinstance(repository, GcsStore | SurrealStore):
         raise RuntimeError(
-            "Cloud mode needs a shared store: set PROPADMIN_DATA_PATH=gs://bucket/state.json "
-            "(or inject a durable SurrealDB repository); local JSON is not a Cloud Run database"
+            "Cloud mode needs a shared store: set PROPADMIN_DATA_PATH=surrealdb (with SURREAL_*) "
+            "or gs://bucket/state.json; local JSON is not a Cloud Run database"
         )
     repository.mutate(upgrade_addendum)
 
@@ -51,10 +52,14 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
             except ConflictError:
                 pass
         scheduler = None
+        tuning_scheduler = None
         if cfg.mode == "local" and service == "api":
             from .ledger_scheduler import start_local_ledger_scheduler
 
             scheduler = await start_local_ledger_scheduler(app)
+            from .routes_tuning import start_local_tuning_scheduler
+
+            tuning_scheduler = await start_local_tuning_scheduler(app)
         try:
             yield
         finally:
@@ -62,6 +67,10 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
                 scheduler.cancel()
                 with suppress(asyncio.CancelledError):
                     await scheduler
+            if tuning_scheduler:
+                tuning_scheduler.cancel()
+                with suppress(asyncio.CancelledError):
+                    await tuning_scheduler
             await asyncio.to_thread(app.state.telemetry.shutdown)
 
     app = FastAPI(title=f"Properly {service}", version="0.1.0", lifespan=lifespan)
@@ -114,14 +123,21 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
     if service == "api":
         from . import (
             mcp,
+            portal_messages,
+            portal_sharing,
+            portal_stream,
+            portal_viewing_rules,
             routes_agent,
             routes_browser,
             routes_email,
             routes_graph,
             routes_ledger,
             routes_ops,
+            routes_portal,
             routes_tickets,
+            routes_tuning,
             routes_voice,
+            routes_workflow,
         )
 
         for module in (
@@ -129,13 +145,21 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
             routes_ledger,
             routes_ops,
             routes_tickets,
+            routes_portal,
+            portal_messages,
+            portal_viewing_rules,
+            portal_stream,
+            portal_sharing,
             routes_agent,
             routes_voice,
             routes_email,
             routes_browser,
+            routes_workflow,
+            routes_tuning,
             mcp,
         ):
             app.include_router(module.router)
+        app.include_router(routes_tuning.internal)
 
     if service != "ingestion":
         return app

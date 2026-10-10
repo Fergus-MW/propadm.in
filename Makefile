@@ -1,4 +1,4 @@
-.PHONY: install dev dev-docker seed test check lint typecheck build infra-check schema-check api-check stop
+.PHONY: install dev dev-docker seed test check lint typecheck build infra-check schema-check api-check stop mcp
 install:
 	uv sync --locked
 	pnpm install --frozen-lockfile
@@ -8,6 +8,9 @@ dev:
 
 dev-docker:
 	docker compose -f compose.yaml -f compose.dev.yaml up --build --renew-anon-volumes
+
+mcp:
+	uv run python infra/scripts/mcp_local.py
 
 stop:
 	docker compose down

@@ -411,24 +411,24 @@ export function Ingestion() {
           >
             <div>
               <label className="caption block mb-2" htmlFor="upload">
-                Document, bank statement, invoice or receipt
+                Document, image, bank statement, invoice or receipt
               </label>
               <input
                 id="upload"
                 disabled={reading}
                 type="file"
-                accept=".txt,.md,.json,.csv,.ofx,.qfx,.pdf,text/*,application/json,application/pdf"
+                accept=".txt,.md,.json,.csv,.ofx,.qfx,.pdf,.jpg,.jpeg,.png,.gif,.webp,text/*,application/json,application/pdf,image/jpeg,image/png,image/gif,image/webp"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   setError(null);
                   const mime = sourceMime(file.name, file.type);
-                  const binary = mime === "application/pdf";
-                  if (file.size > (binary ? 5 : 2) * 1024 * 1024) {
+                  const binary = mime === "application/pdf" || mime.startsWith("image/");
+                  if (file.size > (binary ? 5_000_000 : 2_000_000)) {
                     setError(
                       new Error(
                         binary
-                          ? "Choose a PDF under 5 MB"
+                          ? "Choose a PDF or image under 5 MB"
                           : "Choose a text file under 2 MB",
                       ),
                     );

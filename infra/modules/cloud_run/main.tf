@@ -25,6 +25,10 @@ variable "domain_services" {
 variable "push_account" {
   type = string
 }
+variable "subnetwork" {
+  description = "Direct VPC egress subnetwork; private ranges (SurrealDB) only."
+  type        = string
+}
 resource "google_cloud_run_v2_service" "services" {
   for_each            = var.service_accounts
   project             = var.project_id
@@ -33,9 +37,16 @@ resource "google_cloud_run_v2_service" "services" {
   deletion_protection = false
   ingress             = "INGRESS_TRAFFIC_ALL"
   template {
-    service_account                  = each.value
-    timeout                          = "3600s"
-    max_instance_request_concurrency = 80
+    service_account = each.value
+    timeout         = "3600s"
+    # Graph services deserialize shared state and hold transactional copies in memory.
+    max_instance_request_concurrency = each.key == "admin-panel" ? 80 : 2
+    vpc_access {
+      egress = "PRIVATE_RANGES_ONLY"
+      network_interfaces {
+        subnetwork = var.subnetwork
+      }
+    }
     scaling {
       min_instance_count = 0
       max_instance_count = each.key == "browser" ? 1 : 10 # browser sessions live in process memory
@@ -46,7 +57,7 @@ resource "google_cloud_run_v2_service" "services" {
         container_port = each.key == "admin-panel" ? 3000 : 8080
       }
       resources {
-        limits = { cpu = "1", memory = "512Mi"
+        limits = { cpu = contains(["api", "agent"], each.key) ? "2" : "1", memory = each.key == "admin-panel" ? "512Mi" : (contains(["api", "agent"], each.key) ? "4Gi" : "2Gi")
         }
         cpu_idle          = true
         startup_cpu_boost = true

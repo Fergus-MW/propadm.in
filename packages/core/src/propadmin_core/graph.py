@@ -250,17 +250,18 @@ class GraphService:
         )
 
     def get_entity(self, id):
-        state = self.store.snapshot()
-        entity = state["entities"][id]
-        entity["edges"] = [
-            edge for edge in state["edges"].values() if id in (edge["source"], edge["target"])
-        ]
-        entity["timeline"] = sorted(
-            [change for change in state["changes"].values() if change.get("entity_id") == id],
-            key=lambda c: c["created_at"],
-            reverse=True,
-        )
-        return entity
+        def view(state):
+            return {
+                **state["entities"][id],
+                "edges": [e for e in state["edges"].values() if id in (e["source"], e["target"])],
+                "timeline": sorted(
+                    [c for c in state["changes"].values() if c.get("entity_id") == id],
+                    key=lambda c: c["created_at"],
+                    reverse=True,
+                ),
+            }
+
+        return self.store.read(view)
 
     def create_entity(self, payload, actor="admin", reason=""):
         def create(state):
@@ -473,7 +474,9 @@ class GraphService:
                 if inner not in allowed or not re.fullmatch(r"[a-z][a-z0-9_]*", name):
                     raise ValueError(f"Invalid field schema {name}")
                 spec.setdefault("embed", "text" in kind)
-                if "text" in kind and not spec["embed"]:
+                indexed_triplet = (key == "workflow_triplet"
+                                   and spec == default_types()["workflow_triplet"]["fields"].get(name))
+                if "text" in kind and not spec["embed"] and not indexed_triplet:
                     raise ValueError("Free-text fields must be embedded")
                 spec.setdefault("required", False)
                 spec.setdefault("unique_key", False)

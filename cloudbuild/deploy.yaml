@@ -1,0 +1,18 @@
+# Apply a reviewed saved plan stored privately alongside the remote state.
+# Use the same Terraform version as the machine that created the plan.
+steps:
+  - id: fetch-plan
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args: ['storage', 'cp', '${_PLAN_URI}', '/workspace/deploy.tfplan']
+  - id: terraform-init
+    name: hashicorp/terraform:1.5.7
+    args: ['-chdir=infra/main', 'init', '-input=false', '-lockfile=readonly', '-backend-config=bucket=${_STATE_BUCKET}', '-backend-config=prefix=${_STATE_PREFIX}']
+  - id: terraform-apply
+    name: hashicorp/terraform:1.5.7
+    args: ['-chdir=infra/main', 'apply', '-input=false', '-lock-timeout=60s', '/workspace/deploy.tfplan']
+substitutions:
+  _STATE_PREFIX: main
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

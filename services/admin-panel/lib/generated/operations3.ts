@@ -80,6 +80,420 @@ overview_v1_overview_get: {
         };
     };
 };
+workspace_v1_portal_get: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+initialise_demo_v1_portal_demo_post: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+    };
+};
+command_v1_portal_items__item_id__command_post: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path: {
+            item_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["PortalCommand"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+review_delivery_v1_portal_items__item_id__delivery_review_post: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path: {
+            item_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["DeliveryReview"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+send_reply_v1_portal_items__item_id__send_post: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path: {
+            item_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["PortalReply"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+share_v1_portal_items__item_id__share_post: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path: {
+            item_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["ShareRepair"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+viewing_rules_v1_portal_properties__property_id__viewing_rules_put: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path: {
+            property_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["ViewingRules"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+prospect_availability_v1_portal_prospects_availability_put: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["ProspectAvailability"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+settings_v1_portal_settings_patch: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["PortalSettings"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+shared_v1_portal_shared_get: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+    };
+};
+revoke_v1_portal_shares__share_id__delete: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path: {
+            share_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+stream_v1_portal_stream_get: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+    };
+};
+confirm_trip_v1_portal_trips__trip_id__confirm_post: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path: {
+            trip_id: string;
+        };
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+propose_v1_portal_trips_propose_post: {
+    parameters: {
+        query?: {
+            demo?: boolean;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["TripRequest"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
 properties_v1_properties_get: {
     parameters: {
         query?: {
@@ -251,419 +665,6 @@ create_provider_v1_providers_post: {
     };
     responses: {
         201: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-provider_detail_v1_providers__provider_id__get: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            provider_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-update_provider_v1_providers__provider_id__patch: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            provider_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["EntityUpdate"];
-        };
-    };
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-create_offering_v1_providers__provider_id__offerings_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            provider_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["OfferingWrite"];
-        };
-    };
-    responses: {
-        201: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-update_offering_v1_providers__provider_id__offerings__offering_id__patch: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            offering_id: string;
-            provider_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["OfferingWrite"];
-        };
-    };
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-provider_status_v1_providers__provider_id__status_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            provider_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["Status"];
-        };
-    };
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-record_quote_v1_quotes_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["QuoteWrite"];
-        };
-    };
-    responses: {
-        201: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-accept_quote_v1_quotes__quote_id__accept_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            quote_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-link_relationship_v1_relationships_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["Relationship"];
-        };
-    };
-    responses: {
-        201: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-search_v1_search_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["Search"];
-        };
-    };
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-settings_v1_settings_get: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-    };
-};
-list_proposals_v1_skill_proposals_get: {
-    parameters: {
-        query?: {
-            status?: string | null;
-        };
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-review_proposal_v1_skill_proposals__proposal_id__review_post: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            proposal_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody: {
-        content: {
-            "application/json": components["schemas"]["Review"];
-        };
-    };
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-list_skills_v1_skills_get: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-    };
-};
-get_skill_v1_skills__skill_id__get: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path: {
-            skill_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
             headers: {
                 [name: string]: unknown;
             };

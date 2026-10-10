@@ -4,6 +4,7 @@ import json
 import math
 import re
 import time
+from typing import Literal
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -13,7 +14,16 @@ from propadmin_core.store import identifier, now, publish
 from propadmin_core.ticket_completion import COMPLETION_INSTRUCTIONS
 from pydantic import Field
 
-from . import routes_agent, routes_browser, routes_email, routes_voice, tools_admin, tools_ledger
+from . import (
+    routes_agent,
+    routes_browser,
+    routes_email,
+    routes_voice,
+    routes_workflow,
+    tools_admin,
+    tools_ledger,
+    tools_portal,
+)
 from .auth import issue_token, require_admin, require_internal, require_session
 from .models import Input
 from .observability import current_ids
@@ -26,7 +36,9 @@ SERVER_INFO = {"name": "propadmin-graph", "version": "0.1.0"}
 INSTRUCTIONS = (
     "Use this single endpoint for every graph read and write. Read entity versions before "
     "writes; re-read on conflicts. Supply a reason for mutations. Rules are admin-only. "
-    "Local mode does not execute raw SurrealQL or external communications."
+    "Local mode does not execute raw SurrealQL or external communications. "
+    "Property managers can pause or take over work. Honour portal controls; use get_portal_item "
+    "and draft_portal_reply for human review instead of sending when an action is blocked."
     " " + COMPLETION_INSTRUCTIONS
 )
 
@@ -174,24 +186,41 @@ TOOLS = [
 # Comms, browser, plan and skill tools live beside their routes; one endpoint serves all.
 EXTENSIONS = {
     name: entry
-    for module in (routes_agent, routes_voice, routes_email, routes_browser, tools_ledger)
+    for module in (
+        routes_agent,
+        routes_voice,
+        routes_email,
+        routes_browser,
+        routes_workflow,
+        tools_ledger,
+        tools_portal,
+    )
     for name, entry in module.TOOLS.items()
 }
 # These handlers write their own record_action entry; /mcp must not audit them twice.
 SELF_LOGGED = {
-    name for module in (routes_agent, routes_voice, routes_email, routes_browser)
+    name
+    for module in (routes_agent, routes_voice, routes_email, routes_browser)
     for name in module.TOOLS
 }
 TOOLS += [
-    {"name": name, "description": entry["description"], "inputSchema": entry["input_schema"],
-     **({"annotations": entry["annotations"]} if "annotations" in entry else {})}
+    {
+        "name": name,
+        "description": entry["description"],
+        "inputSchema": entry["input_schema"],
+        **({"annotations": entry["annotations"]} if "annotations" in entry else {}),
+    }
     for name, entry in EXTENSIONS.items()
 ]
 CATALOGUE = {item["name"]: item for item in TOOLS}
 # Admin chat runs hold an admin-scoped grant: every tool above plus the whole admin API.
 ADMIN_TOOLS = [
-    {"name": name, "description": entry["description"], "inputSchema": entry["input_schema"],
-     "annotations": entry["annotations"]}
+    {
+        "name": name,
+        "description": entry["description"],
+        "inputSchema": entry["input_schema"],
+        "annotations": entry["annotations"],
+    }
     for name, entry in tools_admin.TOOLS.items()
 ]
 ADMIN_CATALOGUE = {**CATALOGUE, **{item["name"]: item for item in ADMIN_TOOLS}}
@@ -254,6 +283,9 @@ def protect_skill(graph, entity_id=None, type_name=None, admin=False):
 
 
 def execute(request, name, args, session_id, admin=False):
+    from .portal_policy import check_agent_control
+
+    check_agent_control(request.app.state.store.snapshot(), session_id, name, args)
     if name in EXTENSIONS:
         return EXTENSIONS[name]["handler"](request.app, session_id, args)
     graph = request.app.state.graph
@@ -340,8 +372,9 @@ def audit(request, session_id, name, args, status, error_code=None):
     """Store metadata only; bearer tokens, tool payloads and documents are never logged here."""
     span_id = current_ids().get("span_id")
     if isinstance(name, str) and name in SELF_LOGGED:
-        actions = request.app.state.store.snapshot()["actions"].values()
-        if span_id and any(a.get("span_id") == span_id for a in actions):
+        if span_id and request.app.state.store.read(
+            lambda s: any(a.get("span_id") == span_id for a in s["actions"].values())
+        ):
             return
 
     def save(state):
@@ -468,6 +501,11 @@ async def mcp(request: Request, session_id=Depends(require_session)):
     admin = is_admin(request, session_id)
     if method == "tools/list":
         tools = TOOLS + ADMIN_TOOLS if admin else TOOLS
+        run = request.app.state.store.snapshot()["runs"].get(session_id, {})
+        if run.get("kind") == "tuning":
+            from propadmin_core.workflow_tuning import READ_TOOLS
+
+            tools = [t for t in TOOLS if t["name"] in READ_TOOLS]
         return result(request_id, {"tools": tools, "ttlMs": 60_000, "cacheScope": "private"})
     if method != "tools/call":
         return rpc_error(request_id, -32601, "Method not found", 404)
@@ -477,8 +515,14 @@ async def mcp(request: Request, session_id=Depends(require_session)):
     catalogue = ADMIN_CATALOGUE if admin else CATALOGUE
     tool_name = name if isinstance(name, str) and name in catalogue else "unknown"
     with telemetry.for_run(
-        run, f"execute_tool {tool_name}", {"name": name, "arguments": args, "request_id": request_id,
-                                         "request_trace_id": current_ids().get("trace_id")},
+        run,
+        f"execute_tool {tool_name}",
+        {
+            "name": name,
+            "arguments": args,
+            "request_id": request_id,
+            "request_trace_id": current_ids().get("trace_id"),
+        },
         attributes={"gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": tool_name},
     ) as outcome:
         response = await call_tool(request, session_id, request_id, name, args, admin)
@@ -499,10 +543,29 @@ async def call_tool(request, session_id, request_id, name, args, admin=False):
         return rpc_error(request_id, -32602, "Unknown tool or invalid arguments")
     try:
         validate(args, catalogue[name]["inputSchema"])
-        if name in tools_admin.TOOLS:
+        run = request.app.state.store.snapshot()["runs"].get(session_id, {})
+        if run.get("evaluation_id"):
+            from .workflow_sandbox import execute_replay
+
+            payload = execute_replay(request, name, args, run, execute)
+        elif name in tools_admin.TOOLS:
+            from .portal_policy import check_agent_control
+
+            check_agent_control(request.app.state.store.snapshot(), session_id, name, args)
             payload = await tools_admin.call(request.app, name, args)
         else:
             payload = execute(request, name, args, session_id, admin)
+    except HTTPException as exc:
+        audit(request, session_id, name, args, "failed", "forbidden")
+        payload = {"error": {"code": "forbidden", "detail": exc.detail}}
+        return result(
+            request_id,
+            {
+                "content": [{"type": "text", "text": json.dumps(payload)}],
+                "structuredContent": payload,
+                "isError": True,
+            },
+        )
     except (KeyError, ValueError, ProviderNotConfigured) as exc:
         code = "conflict" if isinstance(exc, ConflictError) else "invalid"
         if isinstance(exc, KeyError):
@@ -527,10 +590,14 @@ async def call_tool(request, session_id, request_id, name, args, admin=False):
         )
         audit(request, session_id, name, args, "failed", "internal")
         payload = {"error": {"code": "internal", "message": "Graph tool failed unexpectedly"}}
-        return result(request_id, {
-            "content": [{"type": "text", "text": json.dumps(payload)}],
-            "structuredContent": payload, "isError": True,
-        })
+        return result(
+            request_id,
+            {
+                "content": [{"type": "text", "text": json.dumps(payload)}],
+                "structuredContent": payload,
+                "isError": True,
+            },
+        )
     audit(request, session_id, name, args, "completed")
     return result(
         request_id,
@@ -551,6 +618,7 @@ class TokenGrant(Input):
     session_id: str = Field(min_length=1, max_length=200, pattern=r"^[a-zA-Z0-9_:-]+$")
     reason: str = Field(default="Graph access", min_length=1, max_length=2000)
     lifetime_seconds: int = Field(default=3600, strict=True, ge=1, le=86400)
+    scope: Literal["operations", "admin"] = "operations"
 
 
 @router.post("/v1/mcp/tokens", dependencies=[Depends(require_admin)], status_code=201)
@@ -568,6 +636,7 @@ def grant_token(payload: TokenGrant, request: Request):
             "created_at": now(),
             "expires_at": int(time.time()) + payload.lifetime_seconds,
             "revoked": False,
+            **({"scope": "admin"} if payload.scope == "admin" else {}),
         }
         publish(state, "mcp.granted", {"session_id": payload.session_id})
 

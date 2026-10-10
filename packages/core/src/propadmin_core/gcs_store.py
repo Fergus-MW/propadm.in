@@ -64,6 +64,10 @@ class GcsStore:
         with self._lock:
             return self._retry(lambda: copy.deepcopy(self._load()[2]))
 
+    def read(self, fn):
+        with self._lock:
+            return copy.deepcopy(fn(self._retry(lambda: self._load()[2])))
+
     def mutate(self, callback):
         def attempt():
             generation, raw, current = self._load()
@@ -83,7 +87,12 @@ class GcsStore:
 
 
 def open_store(path=None):
-    """`gs://bucket/object` selects the shared GCS store; anything else is local JSON."""
+    """`surrealdb` selects SurrealStore (SURREAL_* env), `gs://bucket/object` the GCS store;
+    anything else is local JSON."""
+    if str(path or "") == "surrealdb":
+        from .surreal_store import SurrealStore
+
+        return SurrealStore()
     if str(path or "").startswith("gs://"):
         return GcsStore(path)
     return Store(path)
