@@ -41,7 +41,7 @@ description: Read a maintenance case from the graph and write back to it safely.
 ## Writing
 - Read the entity and its version first; on a version conflict re-read, never retry stale.
 - Every write has a specific `reason` naming its evidence (email, call, chunk or tool result).
-- Ticket fields: `urgency`, `category`, `status` (triaged, scheduled, in progress, awaiting parts, resolved, closed), `scheduled_visit_at`, `access_instructions`, `cost_estimate`, `cost_actual`, `resolution`, `tags`. Move `status` as the job moves.
+- Ticket fields: `urgency` (emergency, urgent, routine), `category` (plumbing, heating, electrical, damp/mould, structural, appliances, pests, access/security, other), `status` (reported, triaged, scheduled, in progress, awaiting parts, resolved, closed), `scheduled_visit_at`, `access_instructions`, `cost_estimate` and `cost_actual` (numbers, no currency text), `resolution`, `tags`. Move `status` as the job moves. Pass the `version` from your latest read; after each write the version goes up.
 - Person fields: `availability`, `preferred_contact`. Use `add_note` for anything else, saying who said it ("tenant reports...", "contractor confirmed by email...").
 - Never overwrite a confirmed fact with a claim; add a note describing the conflict.
 - Never store bank details, credentials or health details beyond "needs extra care".
