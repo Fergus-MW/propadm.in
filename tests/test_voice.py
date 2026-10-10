@@ -81,7 +81,7 @@ def test_outbound_call_request_shape(client, monkeypatch):
     def post(url, headers, json, timeout):
         sent.update(url=url, headers=headers, json=json)
         return Reply(
-            {"success": True, "message": "ok", "conversation_id": "conv_1", "callSid": "CA1"}
+            {"success": True, "message": "ok", "conversation_id": "conv_1", "sip_call_id": "sip-1"}
         )
 
     monkeypatch.setattr(voice.httpx, "post", post)
@@ -96,7 +96,7 @@ def test_outbound_call_request_shape(client, monkeypatch):
         headers=INTERNAL,
     )
     assert response.status_code == 200, response.text
-    assert sent["url"] == "https://api.elevenlabs.io/v1/convai/twilio/outbound-call"
+    assert sent["url"] == "https://api.elevenlabs.io/v1/convai/sip-trunk/outbound-call"
     assert sent["headers"] == {"xi-api-key": "elevenlabs_api_key"}
     body = sent["json"]
     assert body["agent_id"] == "elevenlabs_agent_id"

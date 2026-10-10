@@ -86,13 +86,19 @@ terraform -chdir=infra/main apply
 ```
 
 Add provider secret versions (`anthropic-api-key`, `elevenlabs-api-key`,
-`elevenlabs-webhook-secret`, `agentmail-api-key`, `agentmail-webhook-secret`,
+`elevenlabs-webhook-secret`, `elevenlabs-tool-secret`, `agentmail-api-key`, `agentmail-webhook-secret`,
 `browserbase-api-key`) to Secret Manager and list them in `secret_versions`;
 non-secret ids (`MANAGED_AGENT_ID`, `MANAGED_ENVIRONMENT_ID`,
 `ELEVENLABS_AGENT_ID`, `ELEVENLABS_PHONE_NUMBER_ID`, `BROWSERBASE_PROJECT_ID`,
 `PIPELINE_MODEL`, `BROWSER_MODEL`) go in `service_environment`. Unconfigured
 providers answer 503. Cloud Scheduler sweeps agent wake-ups every minute and
 runs a nightly full edge recompute.
+
+For Vonage, use the ElevenLabs ID of the imported Vonage number in the voice
+service's `service_environment`. Calls always use ElevenLabs' SIP endpoint.
+Vonage account credentials and trunk passwords
+are provisioning credentials, not voice-service runtime secrets. Follow the
+[voice setup](../services/voice/README.md); no extra Cloud Run service is needed.
 
 Secrets are mounted only into their consuming services. The API/ingestion
 accounts may invoke Vertex models, and ingestion can write raw objects. Delivery

@@ -73,6 +73,10 @@ with the running stack. Focused tests cover their mocked provider workflows;
 real external agent, voice, email and browser sessions require configuration and
 were not exercised.
 
+Voice uses the existing Vonage phone number through ElevenLabs SIP trunking.
+See [voice setup](services/voice/README.md) for inbound/outbound routing,
+credentials and live verification. No audio bridge container is required.
+
 Local extraction and embeddings are explicitly deterministic offline modes.
 Claude/Vertex provider adapters require configuration. SurrealDB migrations and
 an HTTP adapter are included. Local runtime uses file-locked JSON; cloud mode
