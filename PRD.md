@@ -21,6 +21,12 @@ Non-goals (v1)
 - Real-time sync with production systems (we ingest the synthetic environment).
 - Fine-tuning models.
 - Mobile app.
+
+Workflow performance tuning uses a separate evaluation-only Managed Agent with graph-read
+tools, no email, calls, browser or operational writes. The admin Performance tuning page
+runs leave-one-case-out next-step tests and automatically publishes small workflow skill
+corrections after candidate and regression checks. This is an exception to manual skill
+proposal review: no human approval is required. See [tuning specification](eval/workflows/TUNING.md).
 Functional requirements
 | ID | Requirement | Priority |
 | --- | --- | --- |

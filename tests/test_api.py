@@ -162,5 +162,5 @@ def test_cloud_runtime_fails_explicitly_without_durable_repository():
     settings = Settings(
         mode="cloud", admin_password="password", token_secret="secret", internal_token="internal"
     )
-    with pytest.raises(RuntimeError, match="durable SurrealDB"):
+    with pytest.raises(RuntimeError, match="Cloud mode needs a shared store"):
         create_app(settings=settings)

@@ -155,7 +155,7 @@ def verify_signature(headers, body):
 
 
 def ingest_attachments(app, message):
-    """Download each attachment's text and ingest it as a document."""
+    """Download original PDFs, images and text through the shared ingestion pipeline."""
     result = []
     for item in message.get("attachments") or []:
         meta = agentmail(
@@ -164,25 +164,29 @@ def ingest_attachments(app, message):
             f"{quote(message['message_id'], safe='')}/attachments/{quote(item['attachment_id'], safe='')}",
         )
         mime = meta.get("content_type") or item.get("content_type") or "application/octet-stream"
-        # ponytail: text attachments and AgentMail's text_url only; raw bytes are not stored in
-        # GCS yet (cloud scope) and binaries without text_url wait for a parser.
-        url = meta.get("text_url") or (
-            meta.get("download_url") if mime.startswith("text/") else None
-        )
+        url = meta.get("download_url") or meta.get("text_url")
         attachment = {"filename": meta.get("filename") or item.get("filename") or "attachment",
                       "mime": mime, "size": meta.get("size", item.get("size", 0))}  # fmt: skip
-        if url:
-            download = httpx.request("GET", url, timeout=60)
-            if download.status_code >= 400:
-                raise HTTPException(
-                    502, f"Attachment download returned HTTP {download.status_code}"
-                )
-            if download.text.strip():
-                job = app.state.ingestion.ingest(
-                    {"filename": attachment["filename"], "title": attachment["filename"],
-                     "mime": "text/plain", "origin": "agentmail", "text": download.text}
-                )  # fmt: skip
-                attachment["document"] = job["document_id"]
+        if not url:
+            raise ValueError("Attachment has no download URL; retry after refreshing metadata")
+        if attachment["size"] > 5_000_000:
+            raise ValueError("Email attachment exceeds the 5 MB ingestion limit")
+        if not meta.get("download_url") and (mime == "application/pdf" or mime.startswith("image/")):
+            raise ValueError("PDF/image attachments require the original download URL")
+        download = httpx.request("GET", url, timeout=60, follow_redirects=True)
+        if download.status_code >= 400:
+            raise HTTPException(502, f"Attachment download returned HTTP {download.status_code}")
+        if len(download.content) > 5_000_000:
+            raise ValueError("Email attachment exceeds the 5 MB ingestion limit")
+        job = app.state.ingestion.ingest({
+            "filename": attachment["filename"], "title": attachment["filename"],
+            "mime": mime if meta.get("download_url") else "text/plain", "origin": "agentmail",
+            "content_base64": base64.b64encode(download.content).decode(),
+        })
+        attachment["document"] = job["document_id"]
+        document = app.state.store.snapshot()["documents"][job["document_id"]]
+        if document.get("gcs_uri"):
+            attachment["gcs_uri"] = document["gcs_uri"]
         result.append(attachment)
     return result
 

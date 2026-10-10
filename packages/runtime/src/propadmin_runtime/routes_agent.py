@@ -30,6 +30,7 @@ class RunCreate(Input):
     goal: str = Field(min_length=1, max_length=4000)
     subjects: list[str] = Field(default_factory=list, max_length=50)
     case: CaseContext | None = None
+    evaluation_id: str | None = Field(default=None, max_length=200)
 
 
 class Review(Input):
@@ -118,7 +119,7 @@ def cancel_run(run_id: str, request: Request):
 
 @router.post("/agent-runs/{run_id}/sync")
 def sync_run(run_id: str, request: Request):
-    return call_service(request.app.state.settings, "agent", f"/internal/runs/{run_id}/sync", {})
+    return call_service(request.app.state.settings, "agent", f"/internal/runs/{run_id}/sync", {}, timeout=180)
 
 
 @router.get("/skills")

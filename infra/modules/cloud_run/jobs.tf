@@ -23,6 +23,12 @@ resource "google_cloud_run_v2_job" "jobs" {
       service_account = each.key == "backfill" ? var.push_account : var.service_accounts[each.value.service]
       timeout         = "3600s"
       max_retries     = 1
+      vpc_access {
+        egress = "PRIVATE_RANGES_ONLY"
+        network_interfaces {
+          subnetwork = var.subnetwork
+        }
+      }
       containers {
         image   = var.images[each.value.service]
         command = each.value.command

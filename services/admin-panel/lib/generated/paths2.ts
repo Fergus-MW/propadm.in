@@ -625,16 +625,64 @@ export interface paths2 {
     patch?: never;
     trace?: never;
 };
-"/v1/workflow-issues": {
+"/v1/workflow-cases": {
     parameters: {
         query?: never;
         header?: never;
         path?: never;
         cookie?: never;
     };
-    get: operations["list_issues_v1_workflow_issues_get"];
+    get: operations["cases_v1_workflow_cases_get"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
+"/v1/workflow-cases/{case_id}/triplets": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["extract_triplets_v1_workflow_cases__case_id__triplets_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
+"/v1/workflow-cases/import": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["import_case_v1_workflow_cases_import_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
+"/v1/workflow-evaluations": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get: operations["evaluations_v1_workflow_evaluations_get"];
+    put?: never;
+    post: operations["prepare_v1_workflow_evaluations_post"];
     delete?: never;
     options?: never;
     head?: never;

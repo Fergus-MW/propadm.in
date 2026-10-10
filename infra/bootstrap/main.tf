@@ -13,7 +13,7 @@ resource "google_project" "project" {
 }
 locals {
   project_id = var.create_project ? google_project.project[0].project_id : var.project_id
-  apis       = toset(["run.googleapis.com", "logging.googleapis.com", "artifactregistry.googleapis.com", "cloudbuild.googleapis.com", "pubsub.googleapis.com", "secretmanager.googleapis.com", "storage.googleapis.com", "dns.googleapis.com", "aiplatform.googleapis.com", "iam.googleapis.com", "serviceusage.googleapis.com", "cloudscheduler.googleapis.com"])
+  apis       = toset(["run.googleapis.com", "logging.googleapis.com", "artifactregistry.googleapis.com", "cloudbuild.googleapis.com", "pubsub.googleapis.com", "secretmanager.googleapis.com", "storage.googleapis.com", "dns.googleapis.com", "aiplatform.googleapis.com", "iam.googleapis.com", "serviceusage.googleapis.com", "cloudscheduler.googleapis.com", "compute.googleapis.com"])
 }
 resource "google_project_service" "apis" {
   for_each           = local.apis
@@ -48,7 +48,7 @@ resource "google_service_account" "build" {
   depends_on   = [google_project_service.apis]
 }
 resource "google_project_iam_member" "build_roles" {
-  for_each = toset(["roles/logging.logWriter", "roles/run.admin", "roles/artifactregistry.writer", "roles/serviceusage.serviceUsageConsumer", "roles/viewer"])
+  for_each = toset(["roles/logging.logWriter", "roles/run.admin", "roles/artifactregistry.writer", "roles/cloudscheduler.admin", "roles/serviceusage.serviceUsageConsumer", "roles/viewer"])
   project  = local.project_id
   role     = each.value
   member   = "serviceAccount:${google_service_account.build.email}"

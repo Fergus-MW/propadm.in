@@ -7,6 +7,7 @@ from .providers import ProviderNotConfigured, SurrealRepository
 from .rules import RuleService
 from .search import SearchService
 from .store import ConflictError, Store, publish
+from .surreal_store import SurrealStore
 
 
 def seed_demo(store):
@@ -25,6 +26,7 @@ __all__ = [
     "SearchService",
     "Store",
     "SurrealRepository",
+    "SurrealStore",
     "open_store",
     "publish",
     "seed_demo",

@@ -53,7 +53,8 @@ def environment():
     if env["PROPADMIN_MODE"] != "local":
         raise ValueError("make dev requires PROPADMIN_MODE=local")
     data = Path(env.get("PROPADMIN_DATA_PATH", ".data/state.json"))
-    env["PROPADMIN_DATA_PATH"] = str(data if data.is_absolute() else ROOT / data)
+    if str(data) != "surrealdb":  # SurrealStore reads SURREAL_* instead of a path
+        env["PROPADMIN_DATA_PATH"] = str(data if data.is_absolute() else ROOT / data)
     env.setdefault("ADMIN_PASSWORD", "propadmin-local")
     env.setdefault("TOKEN_SECRET", "local-development-signing-key")
     env.setdefault("INTERNAL_SERVICE_TOKEN", "local-internal-token")
@@ -243,6 +244,7 @@ def main():
             "Shared data: " + env["PROPADMIN_DATA_PATH"] + " | Ctrl-C stops all services.",
             flush=True,
         )
+        print("Claude Code MCP: run `make mcp` in another terminal.", flush=True)
         while True:
             for name, child in children:
                 if child.poll() is not None:

@@ -4,6 +4,7 @@ import json
 import math
 import re
 import time
+from typing import Literal
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -18,6 +19,7 @@ from . import (
     routes_browser,
     routes_email,
     routes_voice,
+    routes_workflow,
     tools_admin,
     tools_ledger,
     tools_portal,
@@ -189,6 +191,7 @@ EXTENSIONS = {
         routes_voice,
         routes_email,
         routes_browser,
+        routes_workflow,
         tools_ledger,
         tools_portal,
     )
@@ -369,8 +372,9 @@ def audit(request, session_id, name, args, status, error_code=None):
     """Store metadata only; bearer tokens, tool payloads and documents are never logged here."""
     span_id = current_ids().get("span_id")
     if isinstance(name, str) and name in SELF_LOGGED:
-        actions = request.app.state.store.snapshot()["actions"].values()
-        if span_id and any(a.get("span_id") == span_id for a in actions):
+        if span_id and request.app.state.store.read(
+            lambda s: any(a.get("span_id") == span_id for a in s["actions"].values())
+        ):
             return
 
     def save(state):
@@ -497,6 +501,11 @@ async def mcp(request: Request, session_id=Depends(require_session)):
     admin = is_admin(request, session_id)
     if method == "tools/list":
         tools = TOOLS + ADMIN_TOOLS if admin else TOOLS
+        run = request.app.state.store.snapshot()["runs"].get(session_id, {})
+        if run.get("kind") == "tuning":
+            from propadmin_core.workflow_tuning import READ_TOOLS
+
+            tools = [t for t in TOOLS if t["name"] in READ_TOOLS]
         return result(request_id, {"tools": tools, "ttlMs": 60_000, "cacheScope": "private"})
     if method != "tools/call":
         return rpc_error(request_id, -32601, "Method not found", 404)
@@ -534,7 +543,12 @@ async def call_tool(request, session_id, request_id, name, args, admin=False):
         return rpc_error(request_id, -32602, "Unknown tool or invalid arguments")
     try:
         validate(args, catalogue[name]["inputSchema"])
-        if name in tools_admin.TOOLS:
+        run = request.app.state.store.snapshot()["runs"].get(session_id, {})
+        if run.get("evaluation_id"):
+            from .workflow_sandbox import execute_replay
+
+            payload = execute_replay(request, name, args, run, execute)
+        elif name in tools_admin.TOOLS:
             from .portal_policy import check_agent_control
 
             check_agent_control(request.app.state.store.snapshot(), session_id, name, args)
@@ -604,6 +618,7 @@ class TokenGrant(Input):
     session_id: str = Field(min_length=1, max_length=200, pattern=r"^[a-zA-Z0-9_:-]+$")
     reason: str = Field(default="Graph access", min_length=1, max_length=2000)
     lifetime_seconds: int = Field(default=3600, strict=True, ge=1, le=86400)
+    scope: Literal["operations", "admin"] = "operations"
 
 
 @router.post("/v1/mcp/tokens", dependencies=[Depends(require_admin)], status_code=201)
@@ -621,6 +636,7 @@ def grant_token(payload: TokenGrant, request: Request):
             "created_at": now(),
             "expires_at": int(time.time()) + payload.lifetime_seconds,
             "revoked": False,
+            **({"scope": "admin"} if payload.scope == "admin" else {}),
         }
         publish(state, "mcp.granted", {"session_id": payload.session_id})
 
