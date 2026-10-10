@@ -338,3 +338,27 @@ def test_every_free_text_field_and_transcript_turn_embedded():
         "outcome",
         "action_items.0",
     }
+
+
+def test_primary_types_configure_what_ingestion_extracts():
+    store = Store()
+    graph, ingestion = GraphService(store), IngestionService(store)
+    types = {t["id"]: t for t in graph.entity_types()}
+    assert types["person"]["primary"] and not types["skill"]["primary"]
+    graph.save_entity_type({**types["company"], "primary": False})
+    company = {t["id"]: t for t in graph.entity_types()}["company"]
+    assert company["primary"] is False and company["version"] == 2
+    graph.save_entity_type({k: v for k, v in company.items() if k != "primary"})
+    assert {t["id"]: t for t in graph.entity_types()}["company"]["primary"] is False
+    with pytest.raises(ValueError):
+        graph.save_entity_type({**company, "version": 3, "primary": "no"})
+
+    text = "Jane Roe from Acme Ltd reported a leak."
+    job = ingestion.ingest({"filename": "note.md", "text": text, "records": [
+        {"type": "person", "name": "Jane Roe",
+         "mentions": [{"start": 0, "end": 8, "text": "Jane Roe", "confidence": 1}]},
+        {"type": "company", "name": "Acme Ltd",
+         "mentions": [{"start": 14, "end": 22, "text": "Acme Ltd", "confidence": 1}]},
+    ]})
+    created = {e["type"] for e in store.snapshot()["entities"].values()}
+    assert job["skipped_types"] == ["company"] and created == {"person"}

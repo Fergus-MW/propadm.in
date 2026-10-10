@@ -97,7 +97,9 @@ email, phone, CRM, browser, plans, skills, scheduling, all through the propadmin
 everything the admin panel can, via two admin tools: list_admin_endpoints shows every admin API
 endpoint; admin_api calls one as the administrator (edge rules, entity types and schema,
 settings, providers and credentials, ledgers, skills and skill proposals, ingestion, agent runs,
-change log and undo). Unlike the operations agent you may edit live skills, rules and
+change log and undo). Each entity type's `primary` flag decides whether ingestion extracts
+it from sources: to reconfigure ingestion, GET /v1/entity-types, then PATCH the full type with
+primary changed. Unlike the operations agent you may edit live skills, rules and
 rule-generated edges.
 
 You are talking to an administrator in a chat. Answer questions directly and concisely. Do

@@ -19,7 +19,7 @@ from .financial_ingestion import (
 )
 from .graph import add_edge, create_in_state, update_in_state
 from .providers import ClaudeProvider
-from .registry import hard_keys, validate_fields
+from .registry import hard_keys, primary_types, validate_fields
 from .rules import recompute_enabled
 from .store import ConflictError, identifier, now, publish
 
@@ -145,6 +145,11 @@ def local_candidates(state, text, payload):
                 )
                 break
     return records
+
+
+def primary_registry(state):
+    primary = primary_types(state)
+    return {key: value for key, value in state["entity_types"].items() if key in primary}
 
 
 def resolve(state, candidate, embedder, extractor):
@@ -396,7 +401,7 @@ class IngestionService:
                     {
                         "text": text,
                         "filename": job["filename"],
-                        "registry": self.store.snapshot()["entity_types"],
+                        "registry": primary_registry(self.store.snapshot()),
                     },
                 )
             result = self.store.mutate(
@@ -504,6 +509,16 @@ class IngestionService:
         if not isinstance(records, list) or any(not isinstance(item, dict) for item in records):
             raise ValueError("Extracted entities must be objects")
         records += claim_candidates(state, text, payload, records)
+        # Only admin-configured primary types are ingested; drop the rest and their relations.
+        primary = primary_types(state)
+        skipped = [r for r in records if r.get("type") not in primary]
+        records = [r for r in records if r.get("type") in primary]
+        skipped_names = {r.get("name") for r in skipped}
+        relationships = [
+            r for r in (extracted or {}).get("relationships") or []
+            if not {r.get("source"), r.get("target")} & skipped_names
+        ]
+        job["skipped_types"] = sorted({str(r.get("type")) for r in skipped})
         records.sort(key=lambda candidate: candidate.get("type") == "transaction")
         resolved_names = {}
         financial_started = False
@@ -514,8 +529,7 @@ class IngestionService:
             evidence_rows = candidate_evidence(candidate, spans, chunks, text, document)
             if candidate.get("type") == "transaction":
                 if not financial_started:
-                    link_candidate_relations(state, records, resolved_names,
-                                             (extracted or {}).get("relationships"))
+                    link_candidate_relations(state, records, resolved_names, relationships)
                     financial_started = True
                 entity, method = resolve_financial(state, candidate, evidence_rows, document)
                 if entity.get("status") == "unallocated":
@@ -544,8 +558,7 @@ class IngestionService:
             if entity["type"] in ("email", "call"):
                 add_edge(state, entity["id"], document_id, "derived_from")
         if not financial_started:
-            link_candidate_relations(state, records, resolved_names,
-                                     (extracted or {}).get("relationships"))
+            link_candidate_relations(state, records, resolved_names, relationships)
         document["entities"] = list(dict.fromkeys(document["entities"]))
         for fact in (extracted or {}).get("facts", []) + payload.get("facts", []):
             self._fact(state, document, chunks, fact, text, resolved_names)
@@ -556,6 +569,7 @@ class IngestionService:
             chunks=len(chunks),
             entities=document["entities"],
             unallocated=document.get("unallocated", []),
+            skipped_types=job["skipped_types"],
             completed_at=now(),
         )
         recompute_enabled(state)

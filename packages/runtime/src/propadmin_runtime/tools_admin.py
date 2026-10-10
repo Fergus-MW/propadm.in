@@ -25,7 +25,8 @@ TOOLS = {
     },
     "admin_api": {
         "description": "Call one admin panel API endpoint as the administrator: rules, entity "
-        "types, settings, providers, ledgers, skills and proposals, tickets, ingestion, "
+        "types (PATCH /v1/entity-types with the full type; primary=true/false sets whether "
+        "ingestion extracts it), settings, providers, ledgers, skills and proposals, tickets, ingestion, "
         "agent runs, credentials. path starts with /v1/. Mutations need a reason.",
         "input_schema": {
             "type": "object",
