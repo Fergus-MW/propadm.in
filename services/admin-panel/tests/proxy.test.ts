@@ -64,6 +64,48 @@ it("refuses anonymous API reads and cross-origin mutations", async () => {
   expect(cross.status).toBe(403);
   expect(fetch).not.toHaveBeenCalled();
 });
+it("uses the public host and port behind the production proxy", async () => {
+  const fetch = vi.fn().mockImplementation(async () =>
+    new Response(JSON.stringify({ token: "test-login-token" })),
+  );
+  vi.stubGlobal("fetch", fetch);
+  for (const host of [
+    "admin-panel-tnzhas3sga-ew.a.run.app",
+    "admin-panel-309727281538.europe-west1.run.app",
+  ]) {
+    const headers = {
+      host,
+      origin: `https://${host}`,
+      "Content-Type": "application/json",
+      "x-forwarded-proto": "https",
+    };
+    const request = (method: string, origin = headers.origin) =>
+      new NextRequest("https://0.0.0.0:3000/api/session", {
+        method,
+        headers: { ...headers, origin },
+        ...(["POST", "PATCH"].includes(method)
+          ? { body: JSON.stringify({ password: "test-password" }) }
+          : {}),
+      });
+    const result = await login(request("POST"));
+    expect(result.status).toBe(200);
+    expect(result.cookies.get("propadmin-session")).toMatchObject({
+      httpOnly: true, secure: true, sameSite: "lax",
+    });
+    expect((await logout(request("DELETE"))).status).toBe(200);
+    const context = { params: Promise.resolve({ path: ["v1", "entities", "a"] }) };
+    expect((await PATCH(request("PATCH"), context)).status).toBe(200);
+    fetch.mockClear();
+    for (const origin of [
+      `https://${host}:3000`, `http://${host}`, "https://other.example", "null",
+    ]) {
+      expect((await login(request("POST", origin))).status).toBe(403);
+      expect((await logout(request("DELETE", origin))).status).toBe(403);
+      expect((await PATCH(request("PATCH", origin), context)).status).toBe(403);
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  }
+});
 it("forwards cookie authentication and streams without returning tokens", async () => {
   const fetch = vi.fn().mockResolvedValue(
     new Response('event: delta\ndata: {"version":2}\n\n', {
