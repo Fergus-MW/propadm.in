@@ -334,7 +334,13 @@ export function Schema() {
         <Button
           variant={selected ? "ghost" : "default"}
           onClick={() =>
-            setSelected({ id: "", name: "", fields: {}, version: 0 })
+            setSelected({
+              id: "",
+              name: "",
+              fields: {},
+              version: 0,
+              primary: true,
+            })
           }
         >
           <Plus size={16} />
@@ -360,6 +366,11 @@ export function Schema() {
               ),
             },
             { key: "id", title: "Identifier" },
+            {
+              key: "primary",
+              title: "Ingestion",
+              render: (row) => (row.primary ? "Extracted" : "Not extracted"),
+            },
             {
               key: "fields",
               title: "Fields",
@@ -391,6 +402,7 @@ function SchemaEditor({
   const [fields, setFields] = useState(
     JSON.stringify(selected.fields, null, 2),
   );
+  const [primary, setPrimary] = useState(Boolean(selected.primary));
   const [error, setError] = useState<Error | null>(null);
   const action = useAction();
   return (
@@ -406,7 +418,8 @@ function SchemaEditor({
               {
                 path: "entity-types",
                 method: selected.id ? "PATCH" : "POST",
-                body: { id, name, fields: parsed, version: selected.version },
+                // Spread keeps composite keys and other registry settings intact.
+                body: { ...selected, id, name, fields: parsed, primary },
               },
               { onSuccess: onClose },
             );
@@ -431,6 +444,14 @@ function SchemaEditor({
             required
           />
         </div>
+        <label className="flex items-center gap-2 caption">
+          <input
+            type="checkbox"
+            checked={primary}
+            onChange={(e) => setPrimary(e.target.checked)}
+          />
+          Primary entity: ingestion extracts this type from sources
+        </label>
         <FormTextarea
           label="Field definitions (JSON)"
           rows={10}

@@ -34,6 +34,18 @@ def field(type="string", *, enum=None, unique=False, embed=None, required=False,
     return result
 
 
+# Agent workflow records are written by agents and admins, never extracted from sources.
+NOT_PRIMARY = {"skill", "skill_version", "workflow_issue", "skill_change_proposal"}
+
+
+def primary_types(state):
+    """Types ingestion extracts from sources; admins toggle each type's `primary` flag."""
+    return {
+        key for key, definition in state["entity_types"].items()
+        if definition.get("primary", key not in NOT_PRIMARY)
+    }
+
+
 def default_types():
     urgency = field(enum=["emergency", "urgent", "routine"])
     intent = field(

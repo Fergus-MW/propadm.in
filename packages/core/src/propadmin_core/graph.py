@@ -6,7 +6,7 @@ import re
 
 from .embeddings import EmbeddingService
 from .graph_relationships import validate_relationship
-from .registry import default_types, hard_keys, normalise, validate_fields
+from .registry import default_types, hard_keys, normalise, primary_types, validate_fields
 from .store import ConflictError, identifier, now, publish
 from .ticket_completion import COMPLETION_FIELDS, validate_completion
 
@@ -441,7 +441,9 @@ class GraphService:
         return document
 
     def entity_types(self):
-        return list(self.store.snapshot()["entity_types"].values())
+        state = self.store.snapshot()
+        primary = primary_types(state)
+        return [{**t, "primary": key in primary} for key, t in state["entity_types"].items()]
 
     def save_entity_type(self, payload):
         def save(state):
@@ -476,6 +478,10 @@ class GraphService:
                 spec.setdefault("required", False)
                 spec.setdefault("unique_key", False)
             previous = state["entity_types"].get(key)
+            if "primary" not in payload and previous and "primary" in previous:
+                payload["primary"] = previous["primary"]
+            if not isinstance(payload.get("primary", True), bool):
+                raise ValueError("primary must be true or false")
             if key == "ticket":
                 fixed = default_types()["ticket"]["fields"]
                 if any(fields.get(name) != fixed[name] for name in COMPLETION_FIELDS):
