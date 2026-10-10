@@ -169,6 +169,7 @@ def main():
             name: DEFAULT_PORTS.get(name, 8010 + index) for index, name in enumerate(services)
         }
         defaults["admin"] = 3000
+        defaults["landing"] = 3001
         ports = allocate_ports(defaults, env)
         check_ports(ports)
         subprocess.run(["pnpm", "install", "--frozen-lockfile"], cwd=ROOT, env=env, check=True)
@@ -209,6 +210,14 @@ def main():
         ]
         children.append(
             ("admin", subprocess.Popen(command, cwd=ROOT, env=env, start_new_session=True))
+        )
+        command = ["node", str(ROOT / "landing/server.mjs")]
+        landing_env = {**env, "PORT": str(ports["landing"])}
+        children.append(
+            (
+                "landing",
+                subprocess.Popen(command, cwd=ROOT, env=landing_env, start_new_session=True),
+            )
         )
         signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
         wait_ready(children, ports)

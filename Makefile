@@ -18,6 +18,7 @@ seed:
 test:
 	uv run pytest
 	pnpm --dir services/admin-panel test
+	node --test landing/test/server.test.mjs
 
 lint:
 	uv run ruff check packages services db infra/scripts infra/tests tests

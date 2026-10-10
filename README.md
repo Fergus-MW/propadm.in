@@ -30,6 +30,9 @@ printed at startup. Set `API_PORT`, `INGESTION_PORT`, `ADMIN_PORT`, or
 `<SERVICE>_PORT` to require specific ports. Explicit port conflicts fail clearly.
 Existing unrelated processes are never terminated.
 
+The [landing page](landing/README.md) also starts with `make dev` at
+**http://127.0.0.1:3001**. Its signup form saves emails to `landing/.data/signups.csv`.
+
 New Python services join local startup automatically once their `pyproject.toml`
 and `app/main.py` exist. Add dependencies to the uv workspace and regenerate the
 lockfile in the same change. Their local service URLs are supplied automatically.

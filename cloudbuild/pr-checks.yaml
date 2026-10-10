@@ -23,6 +23,7 @@ steps:
         pnpm --dir services/admin-panel test
         pnpm --dir services/admin-panel typecheck
         pnpm --dir services/admin-panel build
+        node --test landing/test/server.test.mjs
   - id: terraform-checks
     name: hashicorp/terraform:1.5.7
     entrypoint: sh
