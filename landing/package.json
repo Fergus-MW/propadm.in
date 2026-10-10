@@ -1,0 +1,13 @@
+{
+  "name": "propadmin-landing",
+  "private": true,
+  "description": "Properly landing page and signup endpoint",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/server.test.mjs"
+  }
+}

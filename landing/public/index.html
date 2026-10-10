@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Properly · Your autonomous property manager</title>
+<meta name="description" content="Properly answers every tenant email and phone call, books the repairs, chases rent and keeps the books balanced.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="logo" viewBox="0 0 320 302">
+      <polygon points="160,27.2 295.7,125.5 264.9,280 55.1,280 24.3,125.5" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="44" stroke-linejoin="round"/>
+      <rect x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/>
+      <rect x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/>
+    </symbol>
+    <symbol id="house" viewBox="0 0 320 302">
+      <polygon points="160,27.2 295.7,125.5 264.9,280 55.1,280 24.3,125.5" fill="currentColor" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>
+    </symbol>
+    <symbol id="i-call" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 3.5h3.2l1.8 4.6-2.4 1.6a11.5 11.5 0 0 0 6.7 6.7l1.6-2.4 4.6 1.8V19a2 2 0 0 1-2.1 2A16.5 16.5 0 0 1 3 5.6a2 2 0 0 1 2-2.1Z"/>
+    </symbol>
+    <symbol id="i-email" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>
+    </symbol>
+    <symbol id="i-repair" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z"/>
+    </symbol>
+    <symbol id="i-books" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.5 7.5A4 4 0 0 0 10 9v4.5c0 2.6-1 4.6-3 6.5h11"/><path d="M6.5 13.5h8"/>
+    </symbol>
+  </defs>
+</svg>
+
+<a class="announce" href="#">
+  <span>Psst. Properly sorted a dripping tap while this page loaded.</span>
+  <b>Meet your new property manager <span class="arrow">→</span></b>
+</a>
+
+<header class="nav">
+  <a class="brand" href="#" aria-label="Properly home">
+    <svg aria-hidden="true"><use href="#logo"/></svg>
+    Properly
+  </a>
+  <nav aria-label="Primary">
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#cases">Cases</a></li>
+      <li><a href="#company">Company</a></li>
+    </ul>
+  </nav>
+  <div class="nav-actions">
+    <a class="btn" href="#">Log in</a>
+    <a class="btn btn-ink" href="#signup">Hire Properly</a>
+  </div>
+</header>
+
+<div class="hero-wrap">
+  <div class="sky" aria-hidden="true">
+    <svg class="cloud" style="--top:6%;--w:180px;--dur:95s;--delay:-20s" viewBox="-4 -10 148 80"><use href="#cloud"/></svg>
+    <svg class="cloud" style="--top:38%;--w:120px;--dur:70s;--delay:-52s;--o:.5" viewBox="-4 -10 148 80"><use href="#cloud"/></svg>
+    <svg class="cloud" style="--top:64%;--w:240px;--dur:120s;--delay:-90s;--o:.45" viewBox="-4 -10 148 80"><use href="#cloud"/></svg>
+    <svg class="cloud" style="--top:18%;--w:140px;--dur:85s;--delay:-8s;--o:.6" viewBox="-4 -10 148 80"><use href="#cloud"/></svg>
+    <svg width="0" height="0" style="position:absolute">
+      <symbol id="cloud" viewBox="-4 -10 148 80"><path d="M22 66A20 20 0 0 1 24 28 26 26 0 0 1 70 16 22 22 0 0 1 112 30 18 18 0 0 1 118 66Z"/></symbol>
+    </svg>
+  </div>
+
+  <main class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>On shift right now <span class="sep" aria-hidden="true">·</span> <time id="clock">--:--</time></p>
+
+      <h1>
+        <span class="w" style="--i:0">Property</span>
+        <span class="w" style="--i:1">Management</span>
+        <em class="w" style="--i:2">done</em>
+        <span class="hl"><span class="w" style="--i:3">Properly</span></span>
+      </h1>
+
+      <p class="lede">Properly answers every tenant email and phone call, books the plumber, chases late rent and keeps the books balanced. You get your evenings back.</p>
+
+      <form class="signup" id="signup" novalidate>
+        <label class="sr-only" for="email">Work email</label>
+        <input id="email" name="email" type="email" placeholder="Your work email" autocomplete="email" required>
+        <button type="submit">Hire Properly</button>
+        <div class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+      </form>
+      <p class="form-status" id="signupStatus" role="status"></p>
+      <p class="fineprint">No tenants were left on hold in the making of this website.</p>
+    </div>
+
+    <div class="scene" id="scene" aria-hidden="true">
+      <div class="bubble" id="bubble">
+        <div class="bubble-meta"><svg id="bubbleIcon"><use href="#i-call"/></svg><span id="bubbleMeta">Clocking in</span></div>
+        <p class="bubble-text"><span id="bubbleText"></span><span class="caret"></span></p>
+      </div>
+
+      <div class="chip-pos" data-ch="call" style="--x:0%;--y:46%;--bob:2.8s;--phase:-.4s;--in:1.7s">
+        <div class="chip"><span class="chip-ico"><svg><use href="#i-call"/></svg></span>Calls<span class="chip-badge">+1</span></div>
+      </div>
+      <div class="chip-pos" data-ch="email" style="--x:auto;--r:0%;--y:30%;--bob:3.2s;--phase:-1.2s;--in:1.82s">
+        <div class="chip"><span class="chip-ico"><svg><use href="#i-email"/></svg></span>Emails<span class="chip-badge">+1</span></div>
+      </div>
+      <div class="chip-pos" data-ch="repair" style="--x:5%;--y:76%;--bob:3s;--phase:-2s;--in:1.94s">
+        <div class="chip"><span class="chip-ico"><svg><use href="#i-repair"/></svg></span>Repairs<span class="chip-badge">+1</span></div>
+      </div>
+      <div class="chip-pos" data-ch="books" style="--x:auto;--r:0%;--y:79%;--bob:3.4s;--phase:-.8s;--in:2.06s">
+        <div class="chip"><span class="chip-ico"><svg><use href="#i-books"/></svg></span>Rent &amp; books<span class="chip-badge">+1</span></div>
+      </div>
+
+      <div class="mascot-float">
+        <div class="mascot-drop">
+          <svg class="mascot" id="mascot" viewBox="0 0 320 302">
+            <polygon points="160,27.2 295.7,125.5 264.9,280 55.1,280 24.3,125.5" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="44" stroke-linejoin="round"/>
+            <g class="eyes" id="eyes">
+              <rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/>
+              <rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="shadow"></div>
+      </div>
+
+      <div class="quip" id="quip"></div>
+
+      <div class="tally"><span class="tally-num" id="tally">0</span> jobs handled since you landed</div>
+    </div>
+  </main>
+</div>
+
+<div class="ticker" aria-label="Recently closed cases">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<!-- ================= How it works ================= -->
+<section class="section how" id="how">
+  <div class="wrap">
+    <div class="intro">
+      <div class="reveal">
+        <p class="label">How it works</p>
+        <h2 class="h2">From “it’s leaking” to <em>“it’s fixed”</em>.</h2>
+      </div>
+      <p class="reveal" style="--d:1">Properly runs the whole job across email and phone, start to finish. You only hear about it when there’s a decision worth your time.</p>
+    </div>
+
+    <div class="steps" id="steps" style="--step:0">
+      <div class="track" aria-hidden="true"></div>
+      <div class="walker" aria-hidden="true">
+        <svg id="walker" viewBox="0 0 320 302">
+          <use href="#house"/>
+          <g class="eyes" style="transform: translate(10px, 0px)">
+            <rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/>
+            <rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/>
+          </g>
+        </svg>
+      </div>
+
+      <article class="step active reveal" style="--d:0">
+        <span class="step-num">01</span>
+        <h3>Picks up</h3>
+        <p>Tenants, landlords and contractors call or email like they always have. Properly answers every one, day or night.</p>
+        <div class="snip">
+          <div class="snip-row"><svg><use href="#i-call"/></svg>Incoming call <span class="muted">· 05:07</span></div>
+          <q>It fills up, seems to wash, but never ever stops.</q>
+        </div>
+      </article>
+
+      <article class="step reveal" style="--d:1">
+        <span class="step-num">02</span>
+        <h3>Works it out</h3>
+        <p>Asks the questions a good property manager would, then decides how urgent it is and who should pay.</p>
+        <div class="snip">
+          <div class="snip-row"><span class="tag">Appliance</span><span class="tag sun">Routine</span></div>
+          <div class="snip-row"><span class="muted">Any pets?</span> Two guinea pigs</div>
+        </div>
+      </article>
+
+      <article class="step reveal" style="--d:2">
+        <span class="step-num">03</span>
+        <h3>Sorts it</h3>
+        <p>Gets the landlord’s sign-off, books a trusted contractor and keeps the tenant posted along the way.</p>
+        <div class="snip">
+          <div class="snip-row"><span class="ok">✓</span>Landlord approved inspection</div>
+          <div class="snip-row"><svg><use href="#i-cal"/></svg>Engineer booked <span class="muted">· Tue 09:00</span></div>
+        </div>
+      </article>
+
+      <article class="step reveal" style="--d:3">
+        <span class="step-num">04</span>
+        <h3>Closes it</h3>
+        <p>Checks the work is done, matches the invoice to the books and tells you what happened in one line.</p>
+        <div class="snip">
+          <div class="snip-row"><svg><use href="#i-books"/></svg>Invoice £95.00 <span class="muted">· matched</span></div>
+          <div class="snip-row"><span class="ok">✓</span>Case closed, landlord updated</div>
+        </div>
+      </article>
+    </div>
+
+    <p class="how-foot reveal"><svg aria-hidden="true"><use href="#logo"/></svg>Properly asks before it spends your money and logs every action, so you always know what happened and why.</p>
+  </div>
+</section>
+
+<!-- ================= Cases ================= -->
+<section class="section cases" id="cases">
+  <div class="wrap">
+    <div class="intro">
+      <div class="reveal">
+        <p class="label">Cases</p>
+        <h2 class="h2">Every job comes with a <em>receipt</em>.</h2>
+      </div>
+      <p class="reveal" style="--d:1">Properly keeps the paper trail for every case, so nobody has to dig through an inbox to find out what happened.</p>
+    </div>
+
+    <div class="receipts">
+      <article class="receipt-wrap reveal" style="--rot:-2deg;--d:0">
+        <div class="receipt">
+          <div class="r-head"><span class="r-brand"><svg aria-hidden="true"><use href="#logo"/></svg>Properly</span><span class="r-no">CASE PM-011</span></div>
+          <h3>The dishwasher that never stopped</h3>
+          <p class="r-addr">Flat 12, Copperfield Walk</p>
+          <hr class="cut">
+          <p class="r-said">Tenant said</p>
+          <blockquote>“the dish washer turns on, fills up and seems to wash but never ever stops it’s cycle”</blockquote>
+          <hr class="cut">
+          <ul class="lines">
+            <li>Any pets?<i></i><b>2 guinea pigs</b></li>
+            <li>Landlord sign-off<i></i><b>✓</b></li>
+            <li>Loose heater wire<i></i><b>Tightened</b></li>
+            <li>Missing dial quoted<i></i><b>£95.00</b></li>
+          </ul>
+          <hr class="cut">
+          <div class="total"><span>Messages handled</span><span>32</span></div>
+          <div class="total big"><span>Your time</span><span>0 min</span></div>
+          <span class="stamp" aria-hidden="true">FIXED</span>
+        </div>
+      </article>
+
+      <article class="receipt-wrap reveal" style="--rot:1.5deg;--d:1">
+        <div class="receipt">
+          <div class="r-head"><span class="r-brand"><svg aria-hidden="true"><use href="#logo"/></svg>Properly</span><span class="r-no">CASE PM-024</span></div>
+          <h3>Chips still raw after 90 minutes</h3>
+          <p class="r-addr">Flat 6, Juniper Mews</p>
+          <hr class="cut">
+          <p class="r-said">Tenant said</p>
+          <blockquote>“nuggets or chips still uncooked after 1.30hrs”</blockquote>
+          <hr class="cut">
+          <ul class="lines">
+            <li>Sent the oven manual<i></i><b>✓</b></li>
+            <li>Tenant tried it<i></i><b>Still cold</b></li>
+            <li>Landlord sign-off<i></i><b>✓</b></li>
+            <li>Fence fixed too<i></i><b>✓</b></li>
+          </ul>
+          <hr class="cut">
+          <div class="total"><span>Messages handled</span><span>32</span></div>
+          <div class="total big"><span>Your time</span><span>0 min</span></div>
+          <span class="stamp" aria-hidden="true">FIXED</span>
+        </div>
+      </article>
+
+      <article class="receipt-wrap reveal" style="--rot:-1deg;--d:2">
+        <div class="receipt">
+          <div class="r-head"><span class="r-brand"><svg aria-hidden="true"><use href="#logo"/></svg>Properly</span><span class="r-no">CASE PM-027</span></div>
+          <h3>The bath that wouldn’t drain</h3>
+          <p class="r-addr">Flat 10, Copperfield Walk</p>
+          <hr class="cut">
+          <p class="r-said">Tenant said</p>
+          <blockquote>“the water keep take hours b4 draining”</blockquote>
+          <hr class="cut">
+          <ul class="lines">
+            <li>Suggested a plunger<i></i><b>✓</b></li>
+            <li>Explained call-out fees<i></i><b>✓</b></li>
+            <li>Tenant cleared it<i></i><b>✓</b></li>
+            <li>Contractor call-out<i></i><b>£0.00</b></li>
+          </ul>
+          <hr class="cut">
+          <div class="total"><span>Messages handled</span><span>17</span></div>
+          <div class="total big"><span>Your time</span><span>0 min</span></div>
+          <span class="stamp" aria-hidden="true">SAVED</span>
+        </div>
+      </article>
+
+      <article class="receipt-wrap reveal" style="--rot:2deg;--d:3">
+        <div class="receipt">
+          <div class="r-head"><span class="r-brand"><svg aria-hidden="true"><use href="#logo"/></svg>Properly</span><span class="r-no">CASE PM-003</span></div>
+          <h3>Checkout clean, start to paid</h3>
+          <p class="r-addr">Flat 30, Harbour View</p>
+          <hr class="cut">
+          <p class="r-said">Agency asked</p>
+          <blockquote>“an estimate to clean property as per check out to include the removal of dumped items”</blockquote>
+          <hr class="cut">
+          <ul class="lines">
+            <li>Cleaner assigned<i></i><b>✓</b></li>
+            <li>Estimate approved<i></i><b>✓</b></li>
+            <li>Invoice to landlord<i></i><b>✓</b></li>
+            <li>Landlord replied<i></i><b>“Paid”</b></li>
+          </ul>
+          <hr class="cut">
+          <div class="total"><span>Messages handled</span><span>23</span></div>
+          <div class="total big"><span>Your time</span><span>0 min</span></div>
+          <span class="stamp" aria-hidden="true">PAID</span>
+        </div>
+      </article>
+    </div>
+
+    <p class="note">Example cases. Names and addresses are made up.</p>
+  </div>
+</section>
+
+<!-- ================= Company ================= -->
+<section class="section company" id="company">
+  <div class="wrap">
+    <div class="intro">
+      <div class="reveal">
+        <p class="label">Company</p>
+        <h2 class="h2">Built with love in London <em>and</em> Barcelona.</h2>
+      </div>
+      <p class="reveal" style="--d:1">We’re engineers and operators who think renting should feel effortless for tenants and landlords alike.</p>
+    </div>
+
+    <div class="team">
+      <article class="member reveal" style="--d:0">
+        <div class="member-card">
+          <div class="avatar" style="--tile:var(--sun)">
+            <img src="team/andrey.jpg" alt="" width="400" height="400" loading="lazy" style="--pos:50% 30%">
+            <svg class="badge" viewBox="0 0 320 302" data-eyes aria-hidden="true"><use href="#house"/><g class="eyes"><rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/><rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/></g></svg>
+          </div>
+          <h3>Andrey Lebedev</h3>
+          <p class="role">Product &amp; engineering</p>
+          <p class="bio">Builds new AI products in Airwallex’s Founders’ Lab. Before that founded ZenCheck, building AI agents for finance, and did M&amp;A at Goldman Sachs.</p>
+          <p class="fact">Prize-winning classical guitarist</p>
+          <a class="li-link" href="https://www.linkedin.com/in/andreylebedev28/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        </div>
+      </article>
+
+      <article class="member reveal" style="--d:1">
+        <div class="member-card">
+          <div class="avatar" style="--tile:var(--coral)">
+            <img src="team/fergus.jpg" alt="" width="400" height="400" loading="lazy" style="--pos:50% 18%">
+            <svg class="badge" viewBox="0 0 320 302" data-eyes aria-hidden="true"><use href="#house"/><g class="eyes"><rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/><rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/></g></svg>
+          </div>
+          <h3>Fergus McKenzie-Wilson</h3>
+          <p class="role">AI agents &amp; infrastructure</p>
+          <p class="bio">Building 60x, the knowledge layer for AI agents, with clients like EY and Prosus. Previously led engineering at Valent and co-founded Hydra Drones, which exited.</p>
+          <p class="fact">Built a jet-powered drone and flew it</p>
+          <a class="li-link" href="https://www.linkedin.com/in/fergtech/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        </div>
+      </article>
+
+      <article class="member reveal" style="--d:2">
+        <div class="member-card">
+          <div class="avatar" style="--tile:#fff">
+            <img src="team/daniil.jpg" alt="" width="400" height="400" loading="lazy" style="--pos:50% 30%">
+            <svg class="badge" viewBox="0 0 320 302" data-eyes aria-hidden="true"><use href="#house"/><g class="eyes"><rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/><rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/></g></svg>
+          </div>
+          <h3>Daniil Danilov</h3>
+          <p class="role">Growth &amp; go-to-market</p>
+          <p class="bio">Led growth at Buena, the Berlin startup fixing property management, and at fintech bodo before that. Started out in fintech M&amp;A at FT Partners.</p>
+          <p class="fact">Knows property management from the inside</p>
+          <a class="li-link" href="https://www.linkedin.com/in/danilovdaniil/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        </div>
+      </article>
+
+      <article class="member reveal" style="--d:3">
+        <div class="member-card">
+          <div class="avatar" style="--tile:var(--sky-deep)">
+            <img src="team/bilal.jpg" alt="" width="400" height="400" loading="lazy" style="--pos:50% 30%">
+            <svg class="badge" viewBox="0 0 320 302" data-eyes aria-hidden="true"><use href="#house"/><g class="eyes"><rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/><rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/></g></svg>
+          </div>
+          <h3>Bilal Mustafa Sheikh</h3>
+          <p class="role">Full-stack &amp; UX</p>
+          <p class="bio">Full-stack engineer at Klaris, automating medtech compliance. Before that built the contract review platform at Casey, a legal AI startup.</p>
+          <p class="fact">Thinks like a founder, builds like an engineer</p>
+          <a class="li-link" href="https://www.linkedin.com/in/bilal-mustafa-sheikh/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        </div>
+      </article>
+
+      <article class="member reveal" style="--d:4">
+        <div class="member-card">
+          <div class="avatar" style="--tile:#9fe0b4">
+            <img src="team/miruna.jpg" alt="" width="400" height="400" loading="lazy" style="--pos:62% 18%">
+            <svg class="badge" viewBox="0 0 320 302" data-eyes aria-hidden="true"><use href="#house"/><g class="eyes"><rect class="eye" x="138" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/><rect class="eye" x="211" y="110" width="37" height="88" rx="18.5" fill="#f5f5f5"/></g></svg>
+          </div>
+          <h3>Miruna-Diana Jarda</h3>
+          <p class="role">Fullstack, AI &amp; ML</p>
+          <p class="bio">Engineer of all trades based in Barcelona. Most recently an AI engineer at a London startup, after a stint in quantum ML at the Computer Vision Center.</p>
+          <p class="fact">Has trained quantum diffusion models</p>
+          <a class="li-link" href="https://www.linkedin.com/in/mirunadj/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Outro ================= -->
+<section class="section outro">
+  <div class="wrap">
+    <h2 class="h2 reveal">Go on, take the <em>evening</em> off.</h2>
+    <p class="reveal" style="--d:1">Hand Properly the inbox and the phone line. It’ll take it from here.</p>
+    <a class="btn btn-sun btn-lg reveal" style="--d:2" href="#signup">Hire Properly</a>
+    <div class="peek" aria-hidden="true">
+      <svg viewBox="0 0 320 302" data-eyes><use href="#house"/><g class="eyes"><rect class="eye" x="138" y="110" width="37" height="88" rx="18.5"/><rect class="eye" x="211" y="110" width="37" height="88" rx="18.5"/></g></svg>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <a class="brand" href="#" aria-label="Properly home"><svg viewBox="0 0 320 302" aria-hidden="true"><use href="#house"/><rect x="138" y="110" width="37" height="88" rx="18.5" fill="#0b0b0b"/><rect x="211" y="110" width="37" height="88" rx="18.5" fill="#0b0b0b"/></svg>Properly</a>
+  <nav aria-label="Footer">
+    <a href="#how">How it works</a>
+    <a href="#cases">Cases</a>
+    <a href="#company">Company</a>
+  </nav>
+  <span>© 2026 Properly. Made in London and Barcelona.</span>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
