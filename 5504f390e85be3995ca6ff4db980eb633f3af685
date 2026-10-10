@@ -1,0 +1,48 @@
+infra/scripts/managed_agent.py
+  s_911a0e0b72e3d4::t_f37767229410d5 35-50,95-104
+packages/core/src/propadmin_core/seed.py
+  s_911a0e0b72e3d4::t_088bdcdc8a8b67 29-52,64-107,353
+packages/core/tests/test_skills.py
+  s_911a0e0b72e3d4::t_e7ebf7957b419e 1-60
+skills/book-contractor/SKILL.md
+  s_911a0e0b72e3d4::t_43a1e114e867cb 1-37
+skills/chasing-and-follow-up/SKILL.md
+  s_911a0e0b72e3d4::t_15a5b44f7ec76c 1-37
+skills/communications/SKILL.md
+  s_911a0e0b72e3d4::t_7993f96eb4c504 1-34
+skills/emergency-response/SKILL.md
+  s_911a0e0b72e3d4::t_47a2840e33af0b 1-24
+skills/escalation-and-handover/SKILL.md
+  s_911a0e0b72e3d4::t_80a99ded89769a 1-25,27-47
+skills/graph-conventions/SKILL.md
+  s_911a0e0b72e3d4::t_83e3c27ec124fd 1-43,45-47
+skills/job-completion/SKILL.md
+  s_911a0e0b72e3d4::t_142ff29f8af6b9 1-36
+skills/landlord-approval/SKILL.md
+  s_911a0e0b72e3d4::t_3b3478300b2bc0 1-44
+skills/tenant-call/SKILL.md
+  s_911a0e0b72e3d4::t_6be3e301f3bdad 1-27
+skills/triage-maintenance-ticket/SKILL.md
+  s_911a0e0b72e3d4::t_b5f2d6e70d9c13 1-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5504f390e85be3995ca6ff4db980eb633f3af685",
+  "prompts": {},
+  "humans": {
+    "h_9b5902752e9133": {
+      "author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_911a0e0b72e3d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a20b19fa-0f41-47fc-b508-9b5ef17c73db",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
