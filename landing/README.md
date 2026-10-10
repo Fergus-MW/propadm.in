@@ -21,9 +21,30 @@ gitignored. Open it in any spreadsheet app.
 | `PORT` | `3001` | Port to listen on |
 | `HOST` | `127.0.0.1` | Use `0.0.0.0` inside a container |
 | `SIGNUPS_PATH` | `landing/.data/signups.csv` | Where signups are saved |
+| `SIGNUPS_BUCKET` | unset | Private GCS bucket for durable hosted signups; takes precedence over CSV |
 
-When hosting, put `SIGNUPS_PATH` on a persistent disk. Serverless and static
-hosts (Vercel, Cloud Run without a mounted volume) discard local files.
+Cloud Run uses `SIGNUPS_BUCKET` and its service identity to save one JSON object
+per email. SHA-256 object names keep emails out of URLs; a create-only generation
+precondition deduplicates across concurrent instances and restarts. Local startup
+continues to use CSV without cloud credentials. No credentials are embedded in
+the page or container.
+
+## Host on Cloud Run
+
+Build the landing image from the repository root:
+
+```sh
+gcloud builds submit --project=PROJECT --config=cloudbuild/landing.yaml --substitutions=_TAG=COMMIT .
+```
+
+Set `landing_image` in the ignored `infra/main/terraform.tfvars` to
+`europe-west1-docker.pkg.dev/PROJECT/propadmin/landing:COMMIT`, then run a
+Terraform plan and apply. `infra/main/landing.tf` provisions the landing service,
+its dedicated service account and private signup bucket. Only the page is public;
+signup records are private. The `landing_url` output gives the hosted address.
+
+The header and footer link to the deployed admin panel. The footer also provides
+the link on mobile, where the existing design hides secondary header actions.
 
 ## Layout
 

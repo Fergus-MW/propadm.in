@@ -101,6 +101,11 @@ audience. Internal handlers must verify that identity and audience.
 
 ## DNS and Cloud Build
 
+The separate public landing service is enabled by `landing_image`. Build it with
+`cloudbuild/landing.yaml`; its private GCS signup bucket and service identity are
+managed in `infra/main/landing.tf`. This can be deployed independently of the
+eight application services. See [landing hosting instructions](../landing/README.md).
+
 Change the registrar nameservers to the bootstrap output after deployment.
 Domain mappings require prior ownership verification. Set `domain_services` to
 map admin/api hostnames, read the resulting DNS records, and put their actual
