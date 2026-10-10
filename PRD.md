@@ -60,7 +60,7 @@ Everything we run is serverless on GCP Cloud Run, scales to zero with cold start
 | Embeddings | Vertex gemini-embedding-001, one fixed dimension (e.g. 1536) for all fields | Proposed | Single model = one vector space across entities, chunks, metadata |
 | Document parsing | Docling (PDF/DOCX → structured text) | Proposed | LLM vision fallback for scans |
 | Transcription | ElevenLabs Scribe for any raw call audio | Proposed | ElevenLabs calls already return transcripts |
-| Voice | ElevenLabs Agents, inbound + outbound; number via Twilio or SIP trunk | Decided | See "Voice" |
+| Voice | ElevenLabs Agents, inbound + outbound; existing number via Vonage SIP trunk | Decided | See "Voice" |
 | Email | AgentMail: API-created inboxes, send/reply, inbound webhooks, custom domain | Decided | Python SDK agentmail; see "Email" |
 | DNS | Cloud DNS zone for withproperly.com (registrar stays GoDaddy, nameservers point to Cloud DNS) | Proposed |  |
 | Auth | Single shared admin password (Secret Manager); internal service token between services | Proposed | No SSO or compliance work |
@@ -230,25 +230,14 @@ Credential storage
 - Vault: each credential is a Secret Manager secret (username, password, optional totp_seed). Metadata only (name, allowed_domains, last used) sits in a SurrealDB credential record. Values never enter the graph, logs or model context.
 - Adding one: the admin panel's Credentials page is write-only: you can add, rotate or delete a credential but never read a value back.
 - Domain lock: browser_login only fills when the page's origin is in the credential's allowed_domains, so a lookalike page can't harvest it.
-- 2FA: TOTP codes are generated server-side from the stored seed; SMS or email codes can be read from the agent's Twilio number or AgentMail inbox.
+- 2FA: TOTP codes are generated server-side from the stored seed; email codes can be read from the AgentMail inbox. SMS code retrieval requires a separate SMS integration; SIP voice does not provide SMS.
 - Persistent logins: after a successful login, the Browserbase context (cookies, local storage) is saved per credential, so later sessions start logged in and browser_login is only needed when the session expires.
 - Fits scale-to-zero and sleeps: a browser session never stays open across a sleep; it's closed and the login profile restored on wake.
 Alternatives: Browserbase's 1Password integration if you'd rather keep credentials in 1Password (Browserbase + 1Password); or Browser Use Cloud, which has saved login profiles and domain-scoped secret bindings built in, with less control over each step (docs).
 Voice
-ElevenLabs can run everything except the phone line itself. ElevenLabs Agents handles the conversation (STT, LLM, TTS, turn-taking, tools, transcripts), but it doesn't say it sells phone numbers. You bring a number either through its native Twilio integration or through a SIP trunk from any standard provider such as Telnyx or Vonage (Twilio integration, SIP trunking).
-So: we need Twilio (or a SIP provider) only for the number; we write no Twilio code. Import the Twilio number into ElevenLabs once, then everything goes through the ElevenLabs API.
-Path
-What we build
-When to pick it
-ElevenLabs + Twilio native integration
-Buy a Twilio number, import it into ElevenLabs; outbound calls via the ElevenLabs "outbound call via Twilio" API
-Default: least code, inbound + outbound
-ElevenLabs + SIP trunk (Telnyx/Vonage)
-Configure a SIP trunk in ElevenLabs
-Cheaper per minute or UK numbers easier to get
-ElevenLabs web/WebRTC widget only
-No phone number; calls from the browser
-Demo without PSTN, fastest
+ElevenLabs Agents handles the conversation (STT, LLM, TTS, turn-taking, tools, transcripts). Vonage supplies the existing phone number and its connection to the telephone network.
+Import the existing Vonage number into ElevenLabs as a SIP trunk number and assign the voice agent. Configure ElevenLabs outbound SIP with the Vonage trunk endpoint and digest credentials; route inbound calls from the Vonage number to ElevenLabs' SIP destination. Outbound calls use the ElevenLabs `/v1/convai/sip-trunk/outbound-call` API.
+Audio travels directly between Vonage and ElevenLabs. The existing voice service handles HTTPS call requests, tools and webhooks; no audio bridge container is needed. See [voice setup](services/voice/README.md) for configuration and verification.
 Call flow
 1. Agent calls place_call(entity_id, objective).
 2. FastAPI builds the call brief from the graph (who, history, open items) and passes it as dynamic variables / prompt override to the ElevenLabs agent.
@@ -259,7 +248,7 @@ Inbound calls
 2. At call start, ElevenLabs calls our voice service with the caller number (conversation-initiation webhook); voice resolves it to a canonical person and returns a call brief as dynamic variables. Unknown callers get a generic brief and a new person is created after the call.
 3. During the call the agent uses the same server tools as outbound (lookup_entity, log_commitment, book_follow_up).
 4. Post-call webhook → a call entity with the full transcript, plus a source_file that is chunked, embedded and linked to the caller and anything mentioned.
-To verify during build: exact outbound/batch-calling endpoints and post-call webhook payload on our ElevenLabs plan; the conversation-initiation webhook for inbound personalisation; UK number availability on Twilio (regulatory bundle approval is not instant).
+To verify during build: outbound calling and post-call webhook payload on our ElevenLabs plan; inbound caller metadata and conversation-initiation personalisation; two-way audio and caller ID using the existing Vonage number.
 Email
 AgentMail gives the agents real inboxes that send and receive. Inboxes are created by API, each with a real address; agents send, reply and reply-all within threads; inbound mail arrives by webhook (or WebSocket) after spam and virus checks, with reply text extracted from quoted history (AgentMail inbox capabilities). It supports custom domains with SPF, DKIM and DMARC, attachments, labels, drafts, and has a Python SDK (pip install agentmail).
 Setup
@@ -801,7 +790,7 @@ GCS buckets: raw, artifacts
 scheduler
 Cloud Scheduler job for the nightly recompute; Cloud Tasks queue agent-wakeups for sleeps and scheduled invocations
 secrets
-Secret Manager: Claude API key, ElevenLabs, Twilio, AgentMail, Browserbase, Surreal Cloud credentials, admin password, internal service token; one secret per stored browser credential (created from the admin panel)
+Secret Manager: Claude API key, ElevenLabs, AgentMail, Browserbase, Surreal Cloud credentials, admin password, internal service token; one secret per stored browser credential (created from the admin panel). Vonage management credentials are used for provisioning; Vonage SIP credentials are stored in the ElevenLabs trunk configuration.
 dns
 Records for the domain mappings and AgentMail
 artifact_registry
@@ -863,7 +852,7 @@ Phase 0: Foundations
 [ ] Point withproperly.com nameservers at GoDaddy to Cloud DNS; add withproperly.com to AgentMail
 [ ] Create the Surreal Cloud instance; spike 3.x HNSW, FULLTEXT, RELATION, LIVE and CHANGEFEED syntax
 [ ] Cloud Build pr-checks and deploy; hello-world deploy of every service at min-instances = 0 with domain mappings
-[ ] Buy Twilio number and import into ElevenLabs
+[ ] Configure the existing Vonage number and import it into ElevenLabs over SIP
 Phase 1: Ingestion and resolution
 [ ] Entity-type registry (YAML) → SurrealQL migration generator
 [ ] Adapters: email (EML/JSON), call (audio → Scribe / transcript), document (Docling), CRM record
