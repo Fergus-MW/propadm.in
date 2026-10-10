@@ -87,7 +87,7 @@ export interface components {
             version?: number | null;
         };
         PortalCommand: {
-            action: "takeover" | "handback" | "approve" | "reject" | "draft" | "note" | "stage" | "urgency" | "confirm_fix" | "reopen" | "authority";
+            action: "takeover" | "handback" | "approve" | "reject" | "draft" | "note" | "stage" | "urgency" | "confirm_fix" | "reopen" | "authority" | "emergency_override" | "emergency_stand_down";
             text: string;
             value: string;
             version: number;

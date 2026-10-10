@@ -14,8 +14,8 @@ export const stages = [
 ];
 export const emergencyStages = [
   "Reported",
-  "Safety steps sent",
   "Emergency confirmed",
+  "Safety steps sent",
   "Make-safe dispatched",
   "On the way",
   "Made safe",

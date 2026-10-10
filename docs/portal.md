@@ -32,6 +32,31 @@ as working software.
   internal notes, drafts, messages or contact details. Landlord views include
   estimate and approval status. These are read-only progress views.
 
+## Emergency override
+
+Every repair detail has an **Emergency override** control. Record the observed
+hazard and source, then choose **Activate emergency make-safe & take over**.
+This works while global automation is paused, moves the repair onto emergency
+progress, clears prior ordinary repair approval and keeps the item under human
+control. It does not require a quote, spend limit, photos or form completion.
+Make-safe progress can be recorded above the landlord's limit. The control does
+not send an alert, call a tenant, or dispatch a contractor: the manager must
+arrange assistance and notify the on-call person and landlord through available
+communication channels. Ordinary agent actions remain paused.
+
+**Confirm made safe — continue repair** requires evidence and returns the job
+to urgent triage, with spend approval and tenant-fix confirmation reset. It does
+not close the repair. A suspected emergency can instead be ruled out with a
+recorded human assessment; it remains urgent. Neither action removes fraud,
+privacy or other human-only flags. Routine urgency edits and reopening cannot
+clear an active emergency. An automatic danger flag is a review request, never
+authority for autonomous emergency spend.
+
+A live safety resolution applies only to the reviewed source evidence. New
+inbound facts or a changed danger report trigger review again, including on a
+previously closed repair. See [workflow edge-case review](portal-edge-cases.md)
+for coverage and remaining operational dependencies.
+
 ## Data and integration
 
 `GET /v1/portal` projects canonical ticket entities and related email, property

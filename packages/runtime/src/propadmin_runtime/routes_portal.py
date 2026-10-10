@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from .auth import require_admin
 from .portal_data import EMERGENCY_STAGES, HUMAN_FLAGS, STAGES, demo_data, snapshot
+from .portal_emergency import activate, end_emergency
 from .portal_policy import blocked
 
 router = APIRouter(prefix="/v1/portal", dependencies=[Depends(require_admin)])
@@ -30,6 +31,8 @@ class PortalCommand(BaseModel):
         "confirm_fix",
         "reopen",
         "authority",
+        "emergency_override",
+        "emergency_stand_down",
     ]
     text: str = Field(default="", max_length=10000)
     value: str = Field(default="", max_length=200)
@@ -83,12 +86,35 @@ def command(item_id: str, payload: PortalCommand, request: Request, demo: bool =
         if item["version"] != payload.version:
             raise ConflictError("This record changed. Refresh before trying again.")
         action, text = payload.action, payload.text.strip()
-        if action in {"reject", "note", "stage", "urgency", "authority"} and not text:
+        if (
+            action
+            in {
+                "reject",
+                "note",
+                "stage",
+                "urgency",
+                "authority",
+                "emergency_override",
+                "emergency_stand_down",
+            }
+            and not text
+        ):
             raise ValueError("Add a reason so the next person knows what changed")
-        if action == "takeover":
+        if action == "emergency_override" or (action == "urgency" and payload.value == "Emergency"):
+            if item["emergency"]:
+                raise ValueError("Make-safe is already active; record its progress instead")
+            activate(item, text)
+            action = "emergency_override"
+        elif action == "emergency_stand_down":
+            if item["emergency"]:
+                raise ValueError("Record Made safe before ending an active make-safe response")
+            if item["urgency"] != "Emergency":
+                raise ValueError("There is no emergency concern to review")
+            end_emergency(item)
+        elif action == "takeover":
             item["autonomy"] = 0
         elif action == "handback":
-            if HUMAN_FLAGS.intersection(item["flags"]):
+            if item["urgency"] == "Emergency" or HUMAN_FLAGS.intersection(item["flags"]):
                 blocked(
                     "Always-human decisions cannot be handed to AI",
                     "human_only",
@@ -139,6 +165,12 @@ def command(item_id: str, payload: PortalCommand, request: Request, demo: bool =
                 raise ValueError("Choose a valid progress stage")
             target = stages.index(payload.value)
             if not item["emergency"] and target >= 5:
+                if item["urgency"] == "Emergency":
+                    blocked(
+                        "Review suspected danger before proceeding",
+                        "emergency_review",
+                        "Activate make-safe or rule out the emergency with evidence",
+                    )
                 if (
                     item["estimate"] is None
                     or item["spend_limit"] is None
@@ -158,12 +190,17 @@ def command(item_id: str, payload: PortalCommand, request: Request, demo: bool =
             item["stage"] = target
             if item["emergency"] and target == len(EMERGENCY_STAGES) - 1:
                 # Making safe ends the emergency phase, not the underlying repair.
-                item.update(emergency=False, stage=2, urgency="Urgent")
-                item["flags"] = [flag for flag in item["flags"] if flag != "Emergency"]
+                end_emergency(item)
         elif action == "urgency":
             levels = ["Routine", "Urgent", "Emergency"]
             if payload.value not in levels:
                 raise ValueError("Choose a valid urgency")
+            if item["urgency"] == "Emergency":
+                blocked(
+                    "Review the emergency before lowering urgency",
+                    "emergency_review",
+                    "Record Made safe, or rule out a suspected emergency with evidence",
+                )
             item["urgency"] = payload.value
             item["flags"] = [f for f in item["flags"] if f != "Emergency"]
             if payload.value == "Emergency":
@@ -175,11 +212,18 @@ def command(item_id: str, payload: PortalCommand, request: Request, demo: bool =
                 raise ValueError("Record the tenant's confirmation and its source")
             item["tenant_fixed"] = True
         elif action == "reopen":
+            if item["urgency"] == "Emergency":
+                raise ValueError("Resolve the emergency review before reopening a standard repair")
+            item["approved"] = False
             item["stage"] = 2
             item["emergency"] = False
             item["tenant_fixed"] = False
         event = dict(
-            at=now(), actor="Property manager", action=action, detail=text or payload.value
+            at=now(),
+            actor="Property manager",
+            action=action,
+            detail=f"{payload.value} — {text}" if payload.value else text,
+            value=payload.value,
         )
         item["timeline"] = [*item["timeline"], event]
         item["version"] += 1
@@ -197,6 +241,9 @@ def command(item_id: str, payload: PortalCommand, request: Request, demo: bool =
                 "tenant_fixed",
                 "emergency",
                 "spend_limit",
+                "emergency_reason",
+                "emergency_reviewed_evidence",
+                "waiting_on",
             )
             records = state.setdefault("portal", {}).setdefault("records", {})
             previous = records.get(item_id, {})

@@ -81,7 +81,7 @@ def check_agent_control(state, run_id, name, args):
             is_repair
             and target_status in {"scheduled", "in progress"}
             and not item["approved"]
-            and item["urgency"] != "Emergency"
+            and not item["emergency"]
         ):
             if (
                 item["estimate"] is None
@@ -99,7 +99,11 @@ def check_agent_control(state, run_id, name, args):
                 "completion",
                 "Request tenant confirmation before completing the repair",
             )
-        if item["autonomy"] < 3 or HUMAN_FLAGS.intersection(item["flags"]):
+        if (
+            item["urgency"] == "Emergency"
+            or item["autonomy"] < 3
+            or HUMAN_FLAGS.intersection(item["flags"])
+        ):
             blocked(
                 "This item needs a human decision",
                 "human_control",

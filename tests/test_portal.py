@@ -366,3 +366,135 @@ def test_travel_buffer_between_separate_trips():
         15,
         other,
     )
+
+
+def test_emergency_override_bypasses_only_make_safe_and_survives_pause(client):
+    item = demo(client)["items"][1]
+    client.patch("/v1/portal/settings?demo=true", json={"paused": True})
+    assert command(client, item, "emergency_override").status_code == 422
+    active = command(client, item, "emergency_override", "Tenant confirms water in sockets").json()
+    assert active["emergency"] and active["stage"] == 1 and active["autonomy"] == 0
+    assert not active["approved"] and "Waiting on landlord" not in active["flags"]
+    assert command(client, item, "emergency_override", "Stale evidence").status_code == 409
+    assert command(client, active, "urgency", "Downgrade", "Routine").status_code == 403
+    assert command(client, active, "handback").status_code == 403
+    assert command(client, active, "reopen").status_code == 422
+    assert command(client, active, "emergency_stand_down", "Attempt bypass").status_code == 422
+    dispatched = command(
+        client, active, "stage", "Qualified contractor accepted", "Make-safe dispatched"
+    ).json()
+    assert dispatched["stage"] == 3  # Over-limit quote did not block make-safe.
+    safe = command(
+        client, dispatched, "stage", "Engineer confirmed safe by phone", "Made safe"
+    ).json()
+    assert not safe["emergency"] and safe["urgency"] == "Urgent" and safe["stage"] == 2
+    assert not safe["approved"] and not safe["tenant_fixed"]
+    assert (
+        command(client, safe, "stage", "Permanent repair booking", "Scheduled").status_code == 403
+    )
+    assert client.get("/v1/portal?demo=true").json()["settings"]["paused"]
+    assert safe["timeline"][-1]["detail"] == "Made safe — Engineer confirmed safe by phone"
+    assert safe["timeline"][-1]["value"] == "Made safe"
+
+
+def test_live_emergency_resolution_is_scoped_to_evidence_and_reopens_on_new_danger(client):
+    item_id = "ticket:prop-1042"
+
+    def report(text):
+        entity = client.get(f"/v1/entities/{item_id}").json()
+        response = client.patch(
+            f"/v1/entities/{item_id}",
+            json={
+                "version": entity["version"],
+                "description": text,
+            },
+        )
+        assert response.status_code == 200
+
+    def current():
+        return next(i for i in client.get("/v1/portal").json()["items"] if i["id"] == item_id)
+
+    report("There is water in sockets. The tenant cannot complete a form.")
+    item = current()
+    assert item["urgency"] == "Emergency" and not item["emergency"]
+    assert item["autonomy"] == 1
+    with pytest.raises(HTTPException):
+        check_agent_control(
+            client.app.state.store.snapshot(), "test", "send_email", {"ticket_id": item_id}
+        )
+    client.patch("/v1/portal/settings", json={"paused": True})
+    active = command(
+        client, item, "emergency_override", "Tenant confirmed immediate danger", demo=False
+    ).json()
+    assert current()["emergency"] and active["autonomy"] == 0
+    safe = command(
+        client,
+        active,
+        "stage",
+        "Electrician has isolated affected circuit",
+        "Made safe",
+        demo=False,
+    ).json()
+    assert current()["urgency"] == "Urgent" and "Emergency" not in current()["flags"]
+    assert safe["emergency_reviewed_evidence"]
+
+    # A prior closed state must not hide newly reported danger from the queue.
+    def close_projection(state):
+        state["portal"]["records"][item_id].update(stage=11, tenant_fixed=True, approved=True)
+
+    client.app.state.store.mutate(close_projection)
+    report("The ceiling is coming down now, after the electrical problem was isolated.")
+    assert current()["urgency"] == "Emergency" and not current()["emergency"]
+    assert current()["stage"] == 2 and not current()["tenant_fixed"]
+    reviewed = command(
+        client,
+        current(),
+        "emergency_stand_down",
+        "On-call manager inspected; no immediate danger remains",
+        demo=False,
+    ).json()
+    assert reviewed["urgency"] == "Urgent" and current()["urgency"] == "Urgent"
+    assert client.get("/v1/portal").json()["settings"]["paused"]
+
+
+def test_emergency_urgency_enters_workflow_without_bypassing_fraud_or_privacy(client):
+    item = demo(client)["items"][3]
+    active = command(
+        client, item, "urgency", "Immediate danger separately confirmed", "Emergency"
+    ).json()
+    assert active["emergency"] and active["autonomy"] == 0
+    assert "Fraud check" in active["flags"] and "Human only" in active["flags"]
+    assert active["timeline"][-1]["action"] == "emergency_override"
+    path = f"/v1/portal/items/{item['id']}/send?demo=true"
+    assert (
+        client.post(
+            path,
+            json={
+                "version": active["version"],
+                "text": "Bank details updated",
+                "request_id": str(uuid4()),
+            },
+        ).status_code
+        == 403
+    )
+    assert command(client, active, "handback").status_code == 403
+
+
+def test_vulnerability_raises_urgency_after_an_earlier_routine_override(client):
+    item_id = "ticket:prop-1042"
+    item = next(i for i in client.get("/v1/portal").json()["items"] if i["id"] == item_id)
+    assert (
+        command(client, item, "urgency", "Initial assessment", "Routine", demo=False).status_code
+        == 200
+    )
+    entity = client.get(f"/v1/entities/{item_id}").json()
+    client.patch(
+        f"/v1/entities/{item_id}",
+        json={
+            "version": entity["version"],
+            "description": "The heating is still off. An elderly occupant uses medical equipment.",
+        },
+    )
+    item = next(i for i in client.get("/v1/portal").json()["items"] if i["id"] == item_id)
+    assert item["urgency"] == "Urgent" and "Vulnerable occupant" in item["flags"]
+    assert "Human only" in item["flags"] and item["autonomy"] <= 1

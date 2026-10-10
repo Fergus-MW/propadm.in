@@ -15,6 +15,7 @@ import { Header, State, Section } from "../common";
 import { Button } from "../ui/Button";
 import { FormInput, FormSelect, FormTextarea } from "../ui/Input";
 import { EmptyState } from "../library/EmptyState";
+import { EmergencyControls } from "./emergency-controls";
 import { ShareControls } from "./share-controls";
 import { Flags, ItemLink, ProgressCard, Takeover } from "./shared";
 const lanes = [
@@ -135,7 +136,7 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
   const [spendLimit, setSpendLimit] = useState(
     item.spend_limit?.toString() ?? "",
   );
-  const [urgency, setUrgency] = useState(item.urgency);
+  const [urgency, setUrgency] = useState<string | null>(null);
   const act = (action: string, value = "") =>
     mutation.mutate({
       path: `portal/items/${encodeURIComponent(item.id)}/command?demo=${demo}`,
@@ -158,12 +159,15 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
         </p>
         <Flags flags={item.flags} />
       </div>
+      <EmergencyControls item={item} demo={demo} />
       <div className="portal-job-layout">
         <div>
           <ProgressCard item={item} />
           <Section title="The next decision">
             <h3>
-              {item.approved
+              {item.emergency
+                ? "Make safe now — landlord approval is not required"
+                : item.approved
                 ? "Spend approved — ready to find a contractor"
                 : item.flags.includes("Human only")
                   ? "A person needs to decide"
@@ -178,7 +182,7 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
                 <dd>{money(item.spend_limit)}</dd>
               </dl>
               <div className="actions">
-                <Button
+                {!item.emergency && <Button
                   loading={mutation.isPending}
                   disabled={
                     item.approved ||
@@ -193,7 +197,7 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
                   {item.approved
                     ? "Approved"
                     : `Approve ${money(item.estimate)} repair`}
-                </Button>
+                </Button>}
                 <Link
                   className="draw-underline"
                   href={portalHref("inbox", demo, item.id)}
@@ -202,9 +206,9 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
                 </Link>
               </div>
               <p className="caption">
-                Over-limit approval requires the landlord’s approval source in
-                the reason field. Approval records your decision. Contractor
-                dispatch remains a separate action.
+                {item.emergency
+                  ? "Make-safe authority is active. Normal spending checks resume once the immediate danger is resolved."
+                  : "Over-limit approval requires the landlord’s approval source in the reason field. Approval records your decision. Contractor dispatch remains a separate action."}
               </p>
             </div>
           </Section>
@@ -259,7 +263,7 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
               </Button>
               <FormSelect
                 label="Progress stage"
-                value={target}
+                value={progressStages(item).includes(target) ? target : progressStages(item)[item.stage]}
                 onChange={(e) => setTarget(e.target.value)}
                 options={progressStages(item).map((stage) => ({
                   value: stage,
@@ -270,13 +274,13 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
                 variant="ghost"
                 disabled={!reason.trim()}
                 loading={mutation.isPending}
-                onClick={() => act("stage", target)}
+                onClick={() => act("stage", progressStages(item).includes(target) ? target : progressStages(item)[item.stage])}
               >
                 Record stage override
               </Button>
               <FormSelect
                 label="Urgency"
-                value={urgency}
+                value={item.emergency ? "Emergency" : urgency ?? item.urgency}
                 onChange={(e) => setUrgency(e.target.value)}
                 options={["Routine", "Urgent", "Emergency"].map((v) => ({
                   value: v,
@@ -287,7 +291,7 @@ function Job({ item, demo }: { item: PortalItem; demo: boolean }) {
                 variant="ghost"
                 disabled={!reason.trim()}
                 loading={mutation.isPending}
-                onClick={() => act("urgency", urgency)}
+                onClick={() => act("urgency", urgency ?? item.urgency)}
               >
                 Update urgency
               </Button>

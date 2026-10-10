@@ -3,6 +3,8 @@
 import re
 from datetime import datetime, timedelta, timezone
 
+from .portal_emergency import evidence_key
+
 STAGES = [
     "Reported",
     "Collecting details",
@@ -19,8 +21,8 @@ STAGES = [
 ]
 EMERGENCY_STAGES = [
     "Reported",
-    "Safety steps sent",
     "Emergency confirmed",
+    "Safety steps sent",
     "Make-safe dispatched",
     "On the way",
     "Made safe",
@@ -281,7 +283,7 @@ def graph_items(state):
             flags=re.I,
         )
         if re.search(
-            r"gas smell|smell of gas|eggy smell|burning smell|change the locks|water (?:near|in) (?:electrics|lights|sockets)",
+            r"gas smell|smell of gas|eggy smell|burning|smoke|\bfire\b|sparks|flooding|ceiling (?:is )?(?:sagging|falling|coming down)|can[’']?t lock|cannot lock|carbon monoxide alarm|change the locks|water (?:near|in) (?:electrics|lights|sockets)",
             evidence,
             re.I,
         ):
@@ -299,6 +301,10 @@ def graph_items(state):
             re.I,
         ):
             flags.extend(["Fraud check", "Human only"])
+        if re.search(r"\b(?:baby|elderly|pregnant|disabled|medical equipment)\b", evidence, re.I):
+            flags.extend(["Vulnerable occupant", "Human only"])
+            if urgency != "Emergency":
+                urgency = "Urgent"
         item = dict(
             id=entity["id"],
             source_id=entity["id"],
@@ -342,14 +348,35 @@ def graph_items(state):
         )
         overlay = overrides.get(entity["id"], {})
         item.update(overlay)
+        item["emergency_evidence"] = evidence_key(entity, messages)
+        if (
+            not item["emergency"]
+            and overlay.get("emergency_reviewed_evidence") == item["emergency_evidence"]
+        ):
+            flags = [f for f in flags if f != "Emergency"]
+            item["flags"] = [f for f in item["flags"] if f != "Emergency"]
         # Current evidence can raise safety flags even after a manager edited portal metadata.
         item["flags"] = list(
             dict.fromkeys(
-                [*item["flags"], *[f for f in flags if f in HUMAN_FLAGS or f == "Emergency"]]
+                [
+                    *item["flags"],
+                    *[
+                        f
+                        for f in flags
+                        if f in HUMAN_FLAGS or f in {"Emergency", "Vulnerable occupant"}
+                    ],
+                ]
             )
         )
         if "Emergency" in item["flags"]:
             item["urgency"] = "Emergency"
+            if not item["emergency"]:
+                item["autonomy"] = min(item["autonomy"], 1)
+                if item["stage"] >= 9:
+                    item.update(stage=2, tenant_fixed=False, approved=False)
+                item["waiting_on"] = "On-call manager · review suspected danger now"
+        elif "Vulnerable occupant" in item["flags"] and item["urgency"] == "Routine":
+            item["urgency"] = "Urgent"
         if HUMAN_FLAGS.intersection(item["flags"]):
             item["autonomy"] = min(item["autonomy"], 1)
         # Preserve live evidence, and combine graph revisions with portal revisions for conflict checks.
