@@ -1,0 +1,26 @@
+landing/public/main.js
+  s_137b1e692b4e8c::t_561508f1d8bb26 71
+landing/public/styles.css
+  s_137b1e692b4e8c::t_375bae67ee0b5b 526
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eaec64af3c969f42f3b5bdc66633bf769d34c728",
+  "prompts": {},
+  "humans": {
+    "h_9b5902752e9133": {
+      "author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_137b1e692b4e8c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12606-cf99-7893-a588-4d4414c6a512",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Andrey Lebedev <andreylebedev345@gmail.com>"
+    }
+  }
+}
