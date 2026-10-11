@@ -27,9 +27,11 @@ def service(monkeypatch, tmp_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     calls = []
+    request_headers = []
 
     def fake(method, url, json=None, **kwargs):
         calls.append((method, url, json))
+        request_headers.append(kwargs.get("headers", {}))
         if url.endswith("/messages/send"):
             body = {"message_id": "<out-1@withproperly.com>", "thread_id": "thd_out"}
         elif url.endswith("/reply"):
@@ -43,6 +45,7 @@ def service(monkeypatch, tmp_path):
     monkeypatch.setattr(httpx, "request", fake)
     with TestClient(module.build(create_app("email", store=Store(None), seed=True))) as client:
         client.calls = calls
+        client.request_headers = request_headers
         yield client
 
 
@@ -122,6 +125,60 @@ def test_send_records_email_entity_with_thread_ids(service, monkeypatch):
     bad = {"to": ["x@example.net"], "subject": "S", "body": "B", "entity_ids": ["ticket:nope"]}
     assert service.post("/internal/send", json=bad, headers=INTERNAL).status_code == 422
     assert service.calls == []
+
+
+def test_delivered_email_survives_extraction_failure_and_retry(service, monkeypatch):
+    monkeypatch.setenv("AGENTMAIL_API_KEY", "key")
+    store = service.app.state.store
+    store.mutate(lambda s: s["runs"].update(run_9={
+        "id": "run_9", "status": "running", "subjects": [],
+    }))
+
+    def fail(*args):
+        raise ValueError("Claude evidence quotes are missing or ambiguous in source text")
+
+    monkeypatch.setattr(service.app.state.ingestion, "ingest", fail)
+    body = {"to": ["a@example.test"], "subject": "Controlled send", "body": "Hello",
+            "run_id": "run_9"}
+    first = service.post("/internal/send", json=body, headers=INTERNAL)
+    assert first.status_code == 200, first.text
+    sent = first.json()
+    assert sent["status"] == "sent" and "enrichment failed" in sent["warning"]
+    assert service.app.state.graph.get_entity(sent["email_id"])["fields"]["status"] == "sent"
+    assert "thd_out" in store.snapshot()["runs"]["run_9"]["subjects"]
+    # A different reasoning string is still the same logical communication.
+    retry = service.post("/internal/send", json={**body, "reason": "Retry"}, headers=INTERNAL)
+    assert retry.status_code == 200 and retry.json()["deduplicated"]
+    assert retry.json()["message_id"] == sent["message_id"]
+    assert len(service.calls) == 1
+    assert service.request_headers[0]["Idempotency-Key"] == sent["idempotency_key"]
+
+
+def test_receipt_prevents_resend_when_local_recording_fails(service, monkeypatch):
+    from services.email.app.delivery import finish
+
+    monkeypatch.setenv("AGENTMAIL_API_KEY", "key")
+    # Exercise a persistence outage after the durable provider receipt, then recover.
+    body = {"to": ["a@example.test"], "subject": "Receipt", "body": "Hello",
+            "idempotency_key": "controlled-receipt"}
+    key = "controlled-receipt"
+    from services.email.app import main as module
+    from services.email.app.delivery import delivery_key, reserve
+    _, fingerprint = delivery_key(body, "ops@withproperly.com", "send", {
+        "to": body["to"], "subject": body["subject"], "text": body["body"],
+        "html": module.email_html(body["body"]),
+    })
+    reserve(service.app, key, fingerprint)
+    sent = {"message_id": "<out-1@withproperly.com>", "thread_id": "thd_out"}
+    fields = module.outbound_fields(sent, "ops@withproperly.com", body["to"], "Receipt", "Hello", None)
+    result = finish(service.app, key, sent, fields, [], None,
+                    lambda *args: (_ for _ in ()).throw(ValueError("write failed")))
+    assert result["status"] == "sent" and "Do not resend" in result["warning"]
+    recovered = service.post("/internal/send", json=body, headers=INTERNAL)
+    assert recovered.status_code == 200 and recovered.json()["email_id"]
+    assert service.calls == []  # recording recovered without calling the provider
+    changed = service.post("/internal/send", json={**body, "body": "Different"}, headers=INTERNAL)
+    assert changed.status_code == 409 and service.calls == []
 
 
 def test_webhook_verifies_ingests_once_and_notifies_agent(service, monkeypatch):

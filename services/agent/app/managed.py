@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from opentelemetry.trace import SpanKind
 from propadmin_core import ProviderNotConfigured
 from propadmin_core.store import identifier, now, publish
@@ -298,7 +298,8 @@ def tool_span_ids(app, run_id):
     )
 
 
-def create_run(app, goal, subjects, context="", case=None, kind=None, evaluation_id=None):
+def create_run(app, goal, subjects, context="", case=None, kind=None, evaluation_id=None,
+               defer_start=False):
     identity = {k: v for k, v in (case or {}).items() if k != "input"}
     with app.state.telemetry.operation(
         "invoke_agent",
@@ -306,10 +307,10 @@ def create_run(app, goal, subjects, context="", case=None, kind=None, evaluation
         identity=identity,
         attributes={"gen_ai.operation.name": "invoke_agent"},
     ):
-        return _create_run(app, goal, subjects, context, case, kind, evaluation_id)
+        return _create_run(app, goal, subjects, context, case, kind, evaluation_id, defer_start)
 
 
-def _create_run(app, goal, subjects, context, case, kind=None, evaluation_id=None):
+def _create_run(app, goal, subjects, context, case, kind=None, evaluation_id=None, defer_start=False):
     if evaluation_id:
         evaluation = evaluation_record(app.state.store.snapshot(), evaluation_id)
         if evaluation["fields"].get("tuning_mode"):
@@ -370,7 +371,10 @@ def _create_run(app, goal, subjects, context, case, kind=None, evaluation_id=Non
             "run.created",
             {"goal": goal, "subjects": subjects, "context": context, "input": run["case_input"]},
         )
-    start_queued(app)
+    if defer_start:
+        grant(app, run["id"])  # voice tools may arrive before provider provisioning
+    else:
+        start_queued(app)
     return app.state.store.snapshot()["runs"][run["id"]]
 
 
@@ -417,7 +421,7 @@ def wake(app, run_id, reason, data=None, wakeup_id=None, subjects=()):
     return {"run_id": run_id, "action": "woken"}
 
 
-def route_event(app, kind, subjects, summary, data):
+def route_event(app, kind, subjects, summary, data, background=None):
     state = app.state.store.snapshot()
     wanted = set(subjects) | {kind}
     pending = {
@@ -434,13 +438,21 @@ def route_event(app, kind, subjects, summary, data):
         None,
     )
     if owner:
+        if background is not None:
+            grant(app, owner["id"])
+            background.add_task(wake, app, owner["id"], f"{kind}: {summary}", data,
+                                subjects=subjects)
+            return {"run_id": owner["id"], "action": "queued"}
         result = wake(app, owner["id"], f"{kind}: {summary}", data, subjects=subjects)
         return {
             "run_id": owner["id"],
             "action": "woken" if result["action"] != "ignored" else "ignored",
         }
     if kind in TRIGGERS:
-        run = create_run(app, summary, subjects, f"Triggered by {kind}: {json.dumps(data)[:20000]}")
+        run = create_run(app, summary, subjects, f"Triggered by {kind}: {json.dumps(data)[:20000]}",
+                         defer_start=background is not None)
+        if background is not None:
+            background.add_task(start_queued, app)
         return {"run_id": run["id"], "action": "started"}
     return {"run_id": None, "action": "ignored"}
 
@@ -685,8 +697,11 @@ def admin_chat(payload: ChatMessage, request: Request):
 
 
 @router.post("/events")
-def ingest_event(payload: Event, request: Request):
-    return route_event(request.app, payload.kind, payload.subjects, payload.summary, payload.data)
+def ingest_event(payload: Event, request: Request, background_tasks: BackgroundTasks):
+    return route_event(
+        request.app, payload.kind, payload.subjects, payload.summary, payload.data,
+        background_tasks if payload.kind == "call.inbound_started" else None,
+    )
 
 
 @router.post("/runs/{run_id}/wake")

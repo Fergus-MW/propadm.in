@@ -81,7 +81,7 @@ services:
       api:
         condition: service_healthy
   surrealdb:
-    image: surrealdb/surrealdb:v3.0.0
+    image: surrealdb/surrealdb:v3.3.0
     profiles:
     - surreal
     command:

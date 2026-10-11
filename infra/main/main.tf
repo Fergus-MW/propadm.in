@@ -39,6 +39,10 @@ locals {
         SURREAL_DATABASE                = "propadmin"
         SURREAL_USER                    = "root"
         GOOGLE_CLOUD_PROJECT            = var.project_id
+        EMBEDDING_PROVIDER              = var.embedding_provider
+        EMBEDDING_MODEL                 = "gemini-embedding-001"
+        EMBEDDING_DIMENSIONS            = "1536"
+        VERTEX_LOCATION                 = "us-central1"
         OBSERVABILITY_ARTIFACT_BUCKET   = module.storage.buckets["artifacts"]
         SERVICE_BASE_URL                = local.urls[name]
         INTERNAL_CALLER_SERVICE_ACCOUNT = google_service_account.push.email
@@ -158,7 +162,7 @@ resource "google_storage_bucket_iam_member" "job_raw_reader" {
 }
 
 resource "google_project_iam_member" "embedding_access" {
-  for_each = toset(["api", "ingestion"])
+  for_each = toset(local.python)
   project  = var.project_id
   role     = "roles/aiplatform.user"
   member   = "serviceAccount:${google_service_account.services[each.key].email}"
@@ -223,6 +227,7 @@ resource "google_cloud_scheduler_job" "schedules" {
   region           = var.region
   name             = "propadmin-${each.key}"
   schedule         = each.value.schedule
+  paused           = false
   time_zone        = "Europe/London"
   attempt_deadline = "600s"
   http_target {

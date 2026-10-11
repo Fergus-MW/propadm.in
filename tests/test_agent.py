@@ -358,3 +358,20 @@ def test_admin_chat_runs_admin_agent_with_admin_grant_and_waits(agent, anthropic
     run = agent.post("/internal/runs", json={"goal": "Fix boiler"}).json()
     refused = agent.post("/internal/admin-chat", json={"message": "Hi", "run_id": run["id"]})
     assert refused.status_code == 422
+
+
+def test_inbound_event_returns_durable_grant_before_provider_start(agent, anthropic):
+    import asyncio
+
+    from fastapi import BackgroundTasks
+
+    tasks = BackgroundTasks()
+    result = managed.route_event(agent.app, 'call.inbound_started', ['person:test'],
+                                 'Controlled inbound call', {'conversation_id': 'conv_test'}, tasks)
+    state = agent.app.state.store.snapshot()
+    run = state['runs'][result['run_id']]
+    assert run['status'] == 'queued' and run['session_id'] is None
+    assert state['mcp_sessions'][run['id']]['revoked'] is False
+    assert not anthropic  # webhook response does not await remote provisioning
+    asyncio.run(tasks())
+    assert agent.app.state.store.snapshot()['runs'][run['id']]['session_id'] == 'sesn_1'

@@ -3,7 +3,7 @@
 import re
 from datetime import datetime, timedelta, timezone
 
-from .portal_emergency import evidence_key
+from .portal_emergency import evidence_key, has_danger
 from .portal_tanner import tanner_items
 
 STAGES = [
@@ -277,17 +277,7 @@ def graph_items(state):
         evidence = " ".join(
             [entity.get("description", ""), fields.get("title", ""), *[m["text"] for m in messages]]
         )
-        evidence = re.sub(
-            r"\b(?:no|not a|without any|without)\s+(?:gas smell|smell of gas|eggy smell|burning smell)\b",
-            "",
-            evidence,
-            flags=re.I,
-        )
-        if re.search(
-            r"gas smell|smell of gas|eggy smell|burning|smoke|\bfire\b|sparks|flooding|ceiling (?:is )?(?:sagging|falling|coming down)|can[’']?t lock|cannot lock|carbon monoxide alarm|change the locks|water (?:near|in) (?:electrics|lights|sockets)",
-            evidence,
-            re.I,
-        ):
+        if has_danger(evidence):
             urgency = "Emergency"
             flags.append("Emergency")
         if re.search(

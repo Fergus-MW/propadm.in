@@ -2,6 +2,8 @@
 
 import json
 import os
+import threading
+from functools import lru_cache
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -45,9 +47,9 @@ class ClaudeProvider:
                     "description": "Return the complete JSON result specified in the instructions.",
                     "input_schema": {"type": "object", "additionalProperties": True},
                 }],
-                "tool_choice": {
-                    "type": "tool", "name": "submit_result", "disable_parallel_tool_use": True,
-                },
+                # Sonnet 5.5 rejects forced tool/any choices. Auto works across the
+                # pipeline and browser models; validate the result below regardless.
+                "tool_choice": {"type": "auto", "disable_parallel_tool_use": True},
             },
             {"x-api-key": self.key, "anthropic-version": "2023-06-01"},
         )
@@ -69,9 +71,12 @@ class VertexEmbeddings:
         self.location = os.getenv("VERTEX_LOCATION", "us-central1")
         self.model = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
         self.dimension = int(os.getenv("EMBEDDING_DIMENSIONS", "1536"))
+        self._credentials = None
+        self._credential_lock = threading.Lock()
         if not self.project:
             raise ProviderNotConfigured("Vertex embeddings require GOOGLE_CLOUD_PROJECT and ADC")
 
+    @lru_cache(maxsize=512)
     def embed(self, text, query=False):
         try:
             import google.auth
@@ -80,10 +85,15 @@ class VertexEmbeddings:
             raise ProviderNotConfigured(
                 "Install google-auth and requests for Vertex embeddings"
             ) from exc
-        credentials, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
-        credentials.refresh(AuthRequest())
+        with self._credential_lock:
+            if self._credentials is None:
+                self._credentials, _ = google.auth.default(
+                    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                )
+            credentials = self._credentials
+            if not credentials.valid:
+                credentials.refresh(AuthRequest())
+            token = credentials.token
         url = (
             f"https://{self.location}-aiplatform.googleapis.com/v1/projects/{self.project}"
             f"/locations/{self.location}/publishers/google/models/{self.model}:predict"
@@ -99,7 +109,7 @@ class VertexEmbeddings:
                 ],
                 "parameters": {"outputDimensionality": self.dimension},
             },
-            {"Authorization": f"Bearer {credentials.token}"},
+            {"Authorization": f"Bearer {token}"},
         )
         values = response["predictions"][0]["embeddings"]["values"]
         if len(values) != self.dimension:

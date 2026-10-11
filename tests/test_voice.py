@@ -199,3 +199,31 @@ def test_server_tool_scoped_to_session_and_read_tools_take_no_reason(client):
     response = client.post(url, json=body, headers=headers)
     assert response.status_code == 200, response.text
     assert response.json()["name"] == "Aisha Khan"
+
+
+def test_sip_international_caller_without_plus_is_recognised(client):
+    reply = client.post('/webhooks/elevenlabs/initiation',
+        json={'caller_id': '447700900101', 'conversation_id': 'conv_digits'},
+        headers={'X-Webhook-Secret': TOOL_SECRET})
+    assert reply.status_code == 200
+    assert reply.json()['dynamic_variables']['contact_name'] == 'Aisha Khan'
+    call = voice.call_entity(client.app.state.store.snapshot(), 'conv_digits')
+    assert call['fields']['from_number'] == '+447700900101'
+
+
+def test_signed_initiation_failure_settles_call_and_repeated_webhook_is_deduplicated(client):
+    client.post('/webhooks/elevenlabs/initiation',
+        json={'caller_id': '447700900101', 'conversation_id': 'conv_failed'},
+        headers={'X-Webhook-Secret': TOOL_SECRET})
+    body = json.dumps({'type': 'call_initiation_failure', 'event_timestamp': int(time.time()),
+                      'data': {'conversation_id': 'conv_failed', 'failure_reason': 'busy'}})
+    path = '/webhooks/elevenlabs/post-call'
+    assert client.post(path, content=body, headers=signed(body, 'wrong')).status_code == 401
+    response = client.post(path, content=body, headers=signed(body))
+    assert response.status_code == 200, response.text
+    call = client.app.state.graph.get_entity(response.json()['call_id'])
+    assert call['fields']['status'] == 'busy' and call['fields']['ended_at']
+    events = len(client.events)
+    repeated = client.post(path, content=body, headers=signed(body))
+    assert repeated.json()['deduplicated']
+    assert len(client.events) == events

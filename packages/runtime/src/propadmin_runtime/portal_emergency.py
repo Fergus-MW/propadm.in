@@ -2,6 +2,23 @@
 
 import hashlib
 import json
+import re
+
+DANGER = (
+    r"gas smell|smell of gas|eggy smell|burning|smoke|fire|sparks|flooding|"
+    r"ceiling (?:is )?(?:sagging|falling|coming down)|can[’']?t lock|cannot lock|"
+    r"carbon monoxide alarm|change the locks|water (?:near|in) (?:electrics|lights|sockets)"
+)
+
+
+def has_danger(evidence):
+    # Remove explicit denials, retaining any later positive report of the same hazard.
+    denial = (
+        r"\b(?:no|not a|without(?: any)?)(?: signs? of| evidence of)?\s+(?:"
+        + DANGER + r")(?:\s*(?:,|or|and)\s+(?:" + DANGER + r"))*\b"
+    )
+    evidence = re.sub(denial, "", evidence, flags=re.I)
+    return bool(re.search(r"\b(?:" + DANGER + r")\b", evidence, re.I))
 
 
 def evidence_key(entity, messages):

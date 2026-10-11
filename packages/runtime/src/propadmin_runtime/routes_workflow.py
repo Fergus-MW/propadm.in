@@ -70,16 +70,16 @@ def triplet_status(request: Request):
     return index_status(request.app.state.store.snapshot())
 
 
-def example_search(request, args, session_id, admin=False):
+def example_search(app, session_id, args):
     payload = ExampleSearch(**args)
     if set(payload.tags) - KINDS:
         raise ValueError("Unknown triplet metadata tag")
-    return retrieve_examples(request.app.state.store.snapshot(), **payload.model_dump())
+    return retrieve_examples(app.state.store.snapshot(), **payload.model_dump())
 
 
 @router.post("/workflow-examples/search")
 def examples(payload: ExampleSearch, request: Request):
-    return example_search(request, payload.model_dump(), "admin")
+    return example_search(request.app, "admin", payload.model_dump())
 
 
 TOOLS = {"search_workflow_examples": {

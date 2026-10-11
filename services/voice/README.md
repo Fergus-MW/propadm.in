@@ -36,9 +36,15 @@ Context, tools and transcripts: ElevenLabs --HTTPS--> Properly voice
    `https://VOICE_HOST/tools/voice/{name}` with the same header and the `run_id`
    dynamic variable. The agent uses `brief`, `objective`, `contact_name` and
    `run_id`; the initiation response supplies these for inbound calls.
-5. Configure the ElevenLabs post-call transcription webhook as
+5. Configure the ElevenLabs post-call transcription and call-initiation-failure webhook as
    `https://VOICE_HOST/webhooks/elevenlabs/post-call` and store its HMAC signing
    secret as `ELEVENLABS_WEBHOOK_SECRET`. This is separate from the tool secret.
+6. Run `uv run python infra/scripts/configure_voice.py` with the agent ID and API
+   key configured. It enables the end-call system tool, sets a 25-second silence
+   timeout, subscribes to initiation failures and adds voicemail/termination instructions
+   while preserving server tools. Signed failure events settle failed/busy calls even
+   when no transcript exists. Inbound events return a durable run/tool grant before
+   provisioning the Managed Agents session; queued startup is recoverable by the scheduler.
 
 The equivalent management APIs are Vonage's
 [`/v1/psip/`](https://developer.vonage.com/en/api/psip) and ElevenLabs'

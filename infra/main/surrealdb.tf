@@ -144,7 +144,7 @@ resource "google_compute_instance" "surreal" {
       docker rm -f surrealdb || true
       docker run -d --name surrealdb --restart always --user 0:0 -p 8000:8000 \
         -v "$mount":/data -e SURREAL_USER=root -e SURREAL_PASS \
-        surrealdb/surrealdb:v3.0.0 start surrealkv:/data/database
+        surrealdb/surrealdb:v3.3.0 start surrealkv:/data/database
     EOT
   }
   depends_on = [google_compute_router_nat.nat, google_secret_manager_secret_iam_member.surreal_vm]

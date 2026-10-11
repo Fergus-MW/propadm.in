@@ -362,3 +362,26 @@ def test_primary_types_configure_what_ingestion_extracts():
     ]})
     created = {e["type"] for e in store.snapshot()["entities"].values()}
     assert job["skipped_types"] == ["company"] and created == {"person"}
+
+
+def test_similarity_rules_use_active_embedding_space_without_hash_provider_mixing(monkeypatch):
+    from propadmin_core.embeddings import embedding_key
+    from propadmin_core.rules import entity_vector
+    from propadmin_core.surreal_store import LazyState
+
+    owner = 'ticket:semantic-test'
+    state = {'embeddings': {
+        'legacy': {'owner': owner, 'field': 'description',
+                   'model': 'local-deterministic-hash-v1', 'vector': [1.0] * 256},
+        embedding_key(owner, 'description', 'vertex:gemini-embedding-001:2'): {
+            'owner': owner, 'field': 'description',
+            'model': 'vertex:gemini-embedding-001:2', 'vector': [0.0, 1.0]},
+    }}
+    entity = {'id': owner, 'description': 'A heating repair', 'fields': {}}
+    monkeypatch.setenv('EMBEDDING_PROVIDER', 'vertex')
+    monkeypatch.setenv('GOOGLE_CLOUD_PROJECT', 'test')
+    monkeypatch.setenv('EMBEDDING_DIMENSIONS', '2')
+    snapshot = LazyState(state)
+    assert entity_vector(snapshot, entity) == [0.0, 1.0]
+    assert entity_vector(snapshot, {**entity, 'id': 'ticket:not-indexed'}) == [0.0, 0.0]
+    assert not snapshot['embeddings'].touched  # no vector collection copied for metadata scans

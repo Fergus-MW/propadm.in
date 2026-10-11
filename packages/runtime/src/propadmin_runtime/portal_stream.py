@@ -16,7 +16,7 @@ async def stream(request: Request):
     async def events():
         version = None
         while not await request.is_disconnected():
-            current = (await asyncio.to_thread(request.app.state.store.snapshot()))["version"]
+            current = (await asyncio.to_thread(request.app.state.store.snapshot))["version"]
             if current != version:
                 version = current
                 yield f"id: {version}\nevent: delta\ndata: {json.dumps({'version': version})}\n\n"

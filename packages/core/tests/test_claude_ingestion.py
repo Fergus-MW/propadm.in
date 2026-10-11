@@ -76,7 +76,7 @@ def test_provider_requires_complete_structured_result(monkeypatch):
 
     monkeypatch.setattr(providers, "http_json", request)
     assert ClaudeProvider().json("Extract", {"text": "Test"}) == {"entities": []}
-    assert requests[0]["tool_choice"]["name"] == "submit_result"
+    assert requests[0]["tool_choice"] == {"type": "auto", "disable_parallel_tool_use": True}
     with pytest.raises(ValueError, match="output token limit"):
         ClaudeProvider().json("Extract", {"text": "Test"})
 
