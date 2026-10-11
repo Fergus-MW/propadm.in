@@ -80,7 +80,7 @@ variable "site_verification" {
 variable "enable_domain_mappings" {
   description = "Create Cloud Run domain mappings; requires the applying account to be a verified owner of the domain."
   type        = bool
-  default     = false
+  default     = true
 }
 variable "state_backend" {
   description = "Shared state store: gcs (legacy single JSON object) or surrealdb (switch after migrate_state.py)."
@@ -89,5 +89,15 @@ variable "state_backend" {
   validation {
     condition     = contains(["gcs", "surrealdb"], var.state_backend)
     error_message = "state_backend must be gcs or surrealdb."
+  }
+}
+
+variable "embedding_provider" {
+  description = "Production semantic embeddings. Use local only while staging a reindex before cutover."
+  type        = string
+  default     = "vertex"
+  validation {
+    condition     = contains(["local", "vertex"], var.embedding_provider)
+    error_message = "embedding_provider must be local or vertex."
   }
 }

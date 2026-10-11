@@ -48,8 +48,15 @@ class EmbeddingService:
     def upsert(self, state, owner, field, text):
         if not text or not isinstance(text, str):
             return
-        key = hashlib.sha256(f"{owner}\0{field}".encode()).hexdigest()
+        key = embedding_key(owner, field, self.model)
         text_hash = hashlib.sha256(text.encode()).hexdigest()
+        # Keep a staged provider migration current when the source changes.
+        # Metadata scans are read-only. Bypass lazy snapshot cloning so a small
+        # graph write does not copy every stored vector; replace/delete by key.
+        for old_key in [k for k, e in dict.items(state["embeddings"])
+                        if e["owner"] == owner and e["field"] == field
+                        and not e.get("index") and e["text_hash"] != text_hash]:
+            del state["embeddings"][old_key]
         previous = state["embeddings"].get(key)
         if previous and previous["text_hash"] == text_hash and previous["model"] == self.model:
             return previous
@@ -57,7 +64,7 @@ class EmbeddingService:
         cached = next(
             (
                 entry
-                for entry in state["embeddings"].values()
+                for entry in dict.values(state["embeddings"])
                 if entry["text_hash"] == text_hash and entry["model"] == self.model
             ),
             None,
@@ -93,9 +100,13 @@ class EmbeddingService:
                     self.upsert(state, owner, field, text)
         stale = [
             key
-            for key, entry in state["embeddings"].items()
+            for key, entry in dict.items(state["embeddings"])
             if entry["owner"] == owner and entry["field"] not in live_fields
-            and entry["model"] == self.model and not entry.get("index")
+            and not entry.get("index")
         ]
         for key in stale:
             del state["embeddings"][key]
+
+
+def embedding_key(owner, field, model):
+    return hashlib.sha256(f"{owner}\0{field}\0{model}".encode()).hexdigest()

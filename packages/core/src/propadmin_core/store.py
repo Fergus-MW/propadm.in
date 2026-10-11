@@ -15,7 +15,8 @@ from pathlib import Path
 COLLECTIONS = (
     "entities edges documents chunks facts embeddings rules jobs runs plans wakeups "
     "actions changes skills issues proposals credentials claims invocations entity_types "
-    "resolutions rule_judgements workflow_sandboxes workflow_private_evaluations workflow_tuning_jobs"
+    "resolutions rule_judgements workflow_sandboxes workflow_private_evaluations workflow_tuning_jobs "
+    "email_deliveries"
 ).split()
 
 

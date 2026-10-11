@@ -34,7 +34,7 @@ Only run one application stack at a time. Port overrides such as
 require rerunning the command; container dependency/cache volumes are refreshed
 without deleting application data.
 The optional `docker compose --profile surreal up -d surrealdb` starts SurrealDB
-3.0.0 on localhost:8008 for database development. It does not change the active
+3.3.0 on localhost:8008 for database development. It does not change the active
 application repository. To create the local namespace and apply the schema:
 
 ```sh
@@ -66,14 +66,36 @@ Main modules provision Artifact Registry, private raw/artifact buckets, scoped
 service accounts and secret access, ingestion Pub/Sub stages with authenticated
 push and retained dead-letter subscriptions, parameterized DNS records, and
 Cloud Build PR/deployment triggers. Cloud Run services and the migration/text
-backfill jobs require `enable_runtime=true`. Every service has zero minimum
-instances, CPU throttling and startup CPU boost.
+backfill jobs require `enable_runtime=true`. API, agent and voice keep one warm
+instance for inbound calls and live tools. The agent retains CPU after responses
+to provision queued sessions in background; the other services throttle idle CPU.
+Python graph services have 4 GiB memory for semantic vectors and transactional
+copies; the admin panel has 512 MiB. All services use startup CPU boost.
+Warm instances and the agent's continuous
+CPU allocation incur ongoing Cloud Run charges.
 
 **Shared state in cloud** is one JSON object in the `PROJECT-state` bucket
 (`PROPADMIN_DATA_PATH=gs://...`), written with GCS generation compare-and-swap
 so every Cloud Run instance sees one consistent store. It manages a few writes
 per second; the SurrealDB repository is the upgrade path. Every service URL,
 `MCP_SERVER_URL` and the OIDC caller identity are derived in `infra/main`.
+
+The `surrealdb` backend requires SurrealDB 3.3.0 or later: writes lock their
+revision decision with `FOR UPDATE` and retry conflicts with bounded jitter.
+Snapshot the data disk before upgrading an existing instance. Apply the updated
+startup script, then restart the VM to run the new database image.
+
+Cloud health monitoring uses `/health`; `/healthz` remains a local alias because
+Cloud Run reserves some public paths ending in `z`. Domain mappings are enabled
+by default for supplied `domain_services`; do not leave only their DNS CNAMEs.
+Scheduler jobs are explicitly enabled in Terraform, including workflow tuning.
+
+Production embeddings default to Vertex `gemini-embedding-001`, 1536 dimensions.
+For an existing local index, stage the runtime with `embedding_provider=local`;
+call authenticated `POST /v1/embeddings/reindex` in batches until
+`GET /v1/embeddings/status` reports `remaining=0`, then apply with `vertex`.
+The gateway generates vectors outside its write transaction, keeps the old space
+until cutover, skips workflow triplet indexes and rejects stale source vectors.
 
 Deploy into an existing project:
 
@@ -193,7 +215,11 @@ recorded, query strings/fragments are removed, and session replay is disabled.
 Python services export native OTel spans to `/i/v1/traces`. Agent runs and tools
 also emit `$ai_trace` and `$ai_span` events with the same trace/span/parent IDs,
 run/session IDs, duration, redacted inputs/outputs and errors. Cloud Run requests
-flush queues before the final response body and services flush on shutdown.
+flush queues after response/background work completes and services flush on
+shutdown. Final response bodies are sent immediately: analytics export must not
+delay call-initiation webhooks or background agent startup. Cloud Logging remains
+the authoritative operational record; optional analytics export is best effort
+when request-based CPU is idle.
 
 Claude Managed Agents hosts the model loop. This integration records the local
 orchestrator and MCP tools; it cannot report hidden provider-side generations,

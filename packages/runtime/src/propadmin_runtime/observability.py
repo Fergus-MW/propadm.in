@@ -364,10 +364,9 @@ class TelemetryMiddleware:
         self.app, self.telemetry = app, telemetry
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["path"] == "/healthz":
+        if scope["type"] != "http" or scope["path"] in {"/health", "/healthz"}:
             return await self.app(scope, receive, send)
         headers = {k.decode().lower(): v.decode() for k, v in scope["headers"]}
-        final_body = None
         context = incoming_context(headers)
         identity = {
             k: headers[f"x-propadmin-{k.replace('_', '-')}"][:200]
@@ -385,10 +384,6 @@ class TelemetryMiddleware:
         ) as outcome:
 
             async def respond(message):
-                nonlocal final_body
-                if message["type"] == "http.response.body" and not message.get("more_body", False):
-                    final_body = message
-                    return
                 if message["type"] == "http.response.start":
                     span = trace.get_current_span()
                     span.set_attribute("http.response.status_code", message["status"])
@@ -402,8 +397,7 @@ class TelemetryMiddleware:
                 await send(message)
 
             await self.app(scope, receive, respond)
-        # Flush while Cloud Run still allocates request CPU, before the last body.
+        # Preserve ASGI response ordering: background tasks start after the final
+        # body. Optional analytics must never hold a completed response hostage.
         if self.telemetry.posthog.client:
             await asyncio.to_thread(self.telemetry.flush)
-        if final_body is not None:
-            await send(final_body)

@@ -67,7 +67,7 @@ def test_failed_actions_report_error_and_analytics_failures_do_not_retry(configu
     assert properties["$ai_error"]["message"] == "Provider failed"
 
 
-def test_cloud_request_exports_and_flushes_before_final_body(configured):
+def test_cloud_response_finishes_before_background_work_and_analytics(configured):
     telemetry, client, spans = configured
     order = []
     client.flush.side_effect = lambda **_: order.append("flush")
@@ -75,6 +75,8 @@ def test_cloud_request_exports_and_flushes_before_final_body(configured):
     async def app(scope, receive, send):
         await send({"type": "http.response.start", "status": 200})
         await send({"type": "http.response.body", "body": b"ok"})
+        order.append("background")
+        assert order[:2] == ["http.response.start", "http.response.body"]
 
     async def send(message):
         order.append(message["type"])
@@ -83,7 +85,7 @@ def test_cloud_request_exports_and_flushes_before_final_body(configured):
         {"type": "http", "path": "/v1/runs", "method": "GET", "headers": []}, None, send,
     ))
     assert spans[0].name == "http.request"
-    assert order == ["http.response.start", "flush", "http.response.body"]
+    assert order == ["http.response.start", "http.response.body", "background", "flush"]
 
 
 def test_empty_and_personal_keys_disable_export(monkeypatch):

@@ -401,6 +401,38 @@ export interface paths1 {
     patch?: never;
     trace?: never;
 };
+"/v1/embeddings/reindex": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["reindex_v1_embeddings_reindex_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
+"/v1/embeddings/status": {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    get: operations["status_v1_embeddings_status_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+};
 "/v1/entities": {
     parameters: {
         query?: never;
@@ -651,38 +683,6 @@ export interface paths1 {
     get: operations["list_grants_v1_mcp_tokens_get"];
     put?: never;
     post: operations["grant_token_v1_mcp_tokens_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-};
-"/v1/mcp/tokens/{session_id}": {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete: operations["revoke_grant_v1_mcp_tokens__session_id__delete"];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-};
-"/v1/overview": {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    get: operations["overview_v1_overview_get"];
-    put?: never;
-    post?: never;
     delete?: never;
     options?: never;
     head?: never;

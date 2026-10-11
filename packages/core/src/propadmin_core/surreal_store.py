@@ -16,11 +16,12 @@ import random
 import threading
 import time
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 from .store import ConflictError, initial_state, normalise
 
 ROOT, EVENTS = "_root", "_events"
-ATTEMPTS = 8
+ATTEMPTS = 20
 PURGE_LAG = 1000  # tombstones kept this many revisions; readers further behind fully reload
 CHUNK = 2_000_000  # bytes per bulk-import transaction
 
@@ -40,7 +41,7 @@ COMMIT;
 """
 WRITE = """
 BEGIN;
-LET $head = (SELECT rev, purged FROM ONLY store_meta:head) ?? {rev: 0, purged: 0};
+LET $head = (SELECT rev, purged FROM ONLY store_meta:head FOR UPDATE) ?? {rev: 0, purged: 0};
 IF $head.rev != $base { THROW "store revision conflict" };
 FOR $r IN $rows { UPSERT type::record("store_record", [$r.c, $r.k]) CONTENT $r; };
 FOR $r IN $gone {
@@ -48,7 +49,9 @@ FOR $r IN $gone {
     UPSERT type::record("store_tombstone", [$r.c, $r.k]) CONTENT $r;
 };
 DELETE store_tombstone WHERE rev <= $purge;
-UPSERT store_meta:head CONTENT {rev: $base + 1, purged: math::max([$head.purged, $purge])};
+UPSERT store_meta:head CONTENT {
+    rev: $base + 1, purged: math::max([$head.purged, $purge]), writer: $writer
+};
 COMMIT;
 """
 
@@ -231,7 +234,12 @@ class SurrealStore:
         results = payload["result"]
         failed = [r for r in results if r.get("status") != "OK"]
         if failed:
-            cause = next((r for r in failed if r.get("kind") != "Query"), failed[0])
+            # A failed COMMIT cancels earlier statements. Their generic rollback
+            # errors can precede the real conflict and omit kind entirely.
+            cause = next((r for r in failed if r.get("kind") == "Thrown"
+                          or "conflict" in str(r.get("result")).lower()), None)
+            cause = cause or next((r for r in failed
+                                   if "not executed" not in str(r.get("result"))), failed[0])
             text = str(cause.get("result"))
             if cause.get("kind") == "Thrown" or "conflict" in text.lower():
                 raise RevisionConflict(text)
@@ -263,7 +271,9 @@ class SurrealStore:
     def _retry(self, operation):
         for attempt in range(ATTEMPTS):
             if attempt:
-                time.sleep(random.uniform(0, 0.02 * 2**attempt))
+                # Bounded full jitter allows bursts to drain without synchronized
+                # writers or an exponential delay that exceeds request deadlines.
+                time.sleep(random.uniform(0, min(2.0, 0.02 * 2**attempt)))
             try:
                 return operation()
             except RevisionConflict:
@@ -295,7 +305,7 @@ class SurrealStore:
             gone = [{"c": c, "k": encode(k), "rev": rev} for (c, k) in removed]
             if rows or gone:
                 self.query(WRITE, {"base": self._rev, "rows": rows, "gone": gone,
-                                   "purge": rev - PURGE_LAG})
+                                   "purge": rev - PURGE_LAG, "writer": uuid4().hex})
                 self._state = normalise({k: dict(v) if isinstance(v, LazyState) else v
                                          for k, v in dict.items(state)})
                 self._rev = rev

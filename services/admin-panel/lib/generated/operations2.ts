@@ -140,6 +140,56 @@ email_v1_emails__email_id__get: {
         };
     };
 };
+reindex_v1_embeddings_reindex_post: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody: {
+        content: {
+            "application/json": components["schemas"]["Batch"];
+        };
+    };
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+        422: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HTTPValidationError"];
+            };
+        };
+    };
+};
+status_v1_embeddings_status_get: {
+    parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+        200: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": unknown;
+            };
+        };
+    };
+};
 entities_v1_entities_get: {
     parameters: {
         query?: {
@@ -604,75 +654,6 @@ ingest_v1_ingest_upload_post: {
     };
 };
 landlords_v1_landlords_get: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-    };
-};
-landlord_statement_v1_landlords__landlord_id__statement_get: {
-    parameters: {
-        query: {
-            period: string;
-        };
-        header?: never;
-        path: {
-            landlord_id: string;
-        };
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-        422: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["HTTPValidationError"];
-            };
-        };
-    };
-};
-unallocated_v1_ledger_unallocated_get: {
-    parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-        200: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": unknown;
-            };
-        };
-    };
-};
-list_grants_v1_mcp_tokens_get: {
     parameters: {
         query?: never;
         header?: never;

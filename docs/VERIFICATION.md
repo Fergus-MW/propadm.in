@@ -1,4 +1,174 @@
-# Local verification
+# Verification
+
+## Production fixes and retest — 10–11 October 2026
+
+The failures in the earlier run below were followed by fixes, local regression
+checks and production deployment. Verification uses controlled test recipients
+and synthetic records; operational ledger balances remain unchanged.
+
+- Email sends reserve a durable idempotency key, use AgentMail's idempotency
+  header, save acceptance independently of extraction and claim the thread before
+  enrichment. A real retry returned the same provider message; the controlled
+  recipient received exactly one copy. Source extraction failures have a local
+  recording fallback and cannot turn an accepted send into a failed-send result.
+- Browser extraction and clicking pass with the production Sonnet model after
+  replacing unsupported forced tool choice with auto and validating the result.
+  Browser open, extraction, actual navigation click, screenshot and close passed.
+- App/API/voice/email Cloud Run domain mappings are Ready with managed TLS.
+  Verified HTTPS 200 on all four from GCP. The local DNS cache has now refreshed;
+  Chrome opens `app.withproperly.com` and production sign-in succeeds.
+- Voice has an end-call tool, 25-second silence timeout and one-message voicemail
+  instructions. A real outbound voicemail test ended after 18 seconds via
+  `end_call`; its webhook updated the same canonical call record.
+- A fresh inbound regression exposed initiation timeouts. Agent events now return
+  a durable queued run/tool grant before remote provisioning. SIP caller ids
+  without `+` are normalised; signed initiation-failure events settle failed/busy
+  calls and deduplicate repeated webhooks. Transcript ingestion runs off the ASGI
+  event loop. Telemetry now sends the final response before background work or
+  analytics flushing; a regression checks the ASGI ordering. Python services have
+  4 GiB for the larger shared vector cache. API/agent/voice stay warm; the agent
+  has CPU outside requests for
+  post-response provisioning, with durable queue recovery by its scheduler.
+  A fresh owned-line PSTN round trip completed both legs in 57 seconds. The inbound
+  assistant confirmed clear audio and the controlled caller's identity; initiation
+  returned 200 in 5.37 seconds and the signed webhook settled the canonical record.
+  After the Vertex switch, a second owned-line test invoked live `get_entity` and
+  `search` tools successfully, read back the expected name, and settled both call
+  legs as completed (91 seconds including the tool exchange). Associated test
+  agent runs finished with no operational action. Historical synthetic initiation
+  failures were reconciled against the provider's failed status and retained for audit.
+- Workflow tuning's scheduler is enabled. A new unseen private case completed
+  automatically with one evaluation and a passing 92.7 score. Its trace exposed
+  an additional example-search handler signature error, now fixed and covered
+  through the actual MCP transport. A second automatic private test passed at 91.1
+  with successful example retrieval.
+- Concurrent writer checks exposed a SurrealDB 3.0.0 lost-update defect. After a
+  production data-disk snapshot, SurrealDB was upgraded to 3.3.0; locked revision
+  reads, unique commit markers and bounded conflict retries preserve all 160
+  increments in an eight-writer real-database regression.
+- The current portal is deployed. Today, Inbox, Maintenance, Viewings, Calendar
+  and Availability load in Chrome. Negated hazard reports no longer trigger an
+  emergency; later positive hazards still do. The live portal version stream's
+  accidental snapshot invocation was fixed and has a regression check.
+- Semantic embeddings migrate resumably to Vertex `gemini-embedding-001` at 1536
+  dimensions, preserving the old search space until completion. Batches stay
+  within the database RPC size limit; read-only scans avoid cloning every vector,
+  concurrent source changes cannot commit stale vectors, and removed fields clear
+  both spaces. Similarity rules use only the active model and avoid full-vector
+  copying. Workflow triplet embeddings remain in their own index. All 8,285 source
+  entries were staged before the switch; production now reports Vertex active,
+  offline=false and zero pending entries. Three live paraphrase queries returned
+  vector matches and citations in 0.96–1.41 seconds; the shower hot-water query
+  included the expected ticket `ticket:prop-1042`.
+
+Local validation: `make check` passed **157 Python tests** (four database tests
+require an explicit local database), and `SURREAL_TEST_URL=http://127.0.0.1:8008
+SURREAL_TEST_PASSWORD=local-surreal uv run pytest packages/core/tests/test_surreal_store.py`
+passed those **four real-database tests**, for **161 Python tests** overall, alongside
+**29 frontend tests** and **four landing-server tests**, plus Python lint,
+frontend types/build, generated API contracts, Terraform and Compose validation.
+`make schema-check` applied migrations 001–005 against SurrealDB 3.3.0.
+Frontend ESLint passed with one existing generated-import warning.
+
+Before merging, the newer `main` maintenance skills, seed refresh and documentation
+were integrated. `SURREAL_TEST_URL=http://127.0.0.1:8008
+SURREAL_TEST_PASSWORD=local-surreal make check` passed **164 Python tests**,
+**29 frontend tests**, **four landing-server tests**, lint, types/build, generated
+API contracts, Terraform and Compose validation on the combined tree.
+
+The final deployment uses image tag `prod-fixes-20261011-1125`. The post-cutover
+retest passed all seven public health checks, portal/property/document/tuning
+reads, controlled email retry/delivery, and browser MCP actions. A test-harness
+revocation URL was corrected; the temporary grant was then revoked successfully.
+All four service custom domains returned HTTPS 200 locally, and Chrome showed
+Vertex search results/citations, completed calls, and the single test email on
+the custom app domain. The signed-in production tab is left open for the user.
+Terraform reports no changes; the deployment is reconciled with its configuration.
+
+The scope still excludes valid signup/chat notifications, real financial mutations
+and live skill publication. Fresh phone checks used Properly's own line and an AI
+caller; the user's earlier successful answered-call confirmation remains the
+evidence for a human recipient. These exclusions are not reported as passes.
+Scoped evidence remains under `/tmp/properly-prod-e2e-20261010/` (restricted).
+
+## Earlier production end-to-end checks — 10 October 2026
+
+Tested the deployed `properly-511210` Cloud Run stack with real providers, under
+reference `prod-e2e-20261010-165229`. **This is not an all-pass result.**
+Controlled test inboxes and a user-supplied phone recipient were used. No
+deployment, DNS, scheduler, live skill, or operational financial changes were made.
+
+### Verified
+
+- All 19 deployed admin navigation screens loaded their data in Chrome, with no
+  application console errors. The graph rendered about 4,580 nodes. Property
+  balances, rent filtering, bank-source highlighting, search results/citations,
+  and the recorded call transcript worked. At 390 × 844, the property page had
+  no document overflow and the mobile navigation opened.
+- API/admin-proxy login and logout, incorrect passwords, absent credentials,
+  Secure/HttpOnly cookies, origin rejection, and access after logout behaved
+  correctly. All seven Python services responded through their Cloud Run URLs.
+- Graph, document, property, landlord, provider, ledger, communications, audit,
+  skills, workflow corpus, ingestion, and tuning reads succeeded. Graph binary
+  framing/counts and SSE replay were verified. JSON/PDF statement generation
+  succeeded; PDF signature and nonempty output were checked, not visual layout.
+- A dedicated synthetic contact supported creation, versioned edits, stale-write
+  rejection, audited undo and repeat-undo conflict protection. Test edits were
+  restored. MCP initialization/discovery, graph reads/search, session revocation,
+  and revoked-token rejection passed. Other services did not expose `/mcp`.
+- Live Claude text ingestion, source retrieval, and duplicate-source idempotence
+  passed. Inbound AgentMail attachment delivery produced a downloadable source
+  document and raw GCS object containing the exact synthetic marker.
+- An email was sent to the user-supplied address and recorded in the graph.
+  A separate controlled inbox round trip exercised Managed Agents, plans,
+  graph/skill reads, outbound email, inbound webhooks, sleep, thread ownership,
+  wake-up and acknowledgement. All six plan steps eventually completed.
+- The outbound SIP call reached voicemail. ElevenLabs returned a 122-second,
+  25-turn transcript; its signed post-call webhook returned 200 and updated the
+  existing call record, which was visible in the admin UI. The user subsequently
+  confirmed that the test call worked. The captured transcript contains voicemail
+  rather than an answered conversation; no fresh inbound test call appeared in
+  the final check. Unsigned email/voice callbacks and unauthenticated voice
+  initiation were rejected.
+- The public landing page, analytics configuration, invalid-email/name handling,
+  and honeypot handling passed. A valid new signup was not submitted because it
+  sends a notification to the configured chat webhook.
+
+### Failures and deployment gaps
+
+| Finding | Evidence and consequence |
+| --- | --- |
+| Email may send successfully while reporting failure | The first agent send reached the controlled recipient, then ingestion failed with `Claude evidence quotes are missing or ambiguous in source text`; the tool returned 422. The agent retried, delivering a second message. The failed send had no canonical outbound email/claimed thread, and its reply started a separate run. The agent's final report incorrectly claimed the first attempt delivered nothing and exactly one email was delivered. This is a duplicate-send and audit/ownership defect. |
+| Browser action/extraction fail with the configured model | Browserbase open, screenshot and close passed. Both `browser_act` and `browser_extract` failed. A minimal request reproduced Anthropic HTTP 400: `tool_choice: type "tool" and "any" are not supported for this model.` The browser adapter uses `claude-sonnet-5-5` with the forced named tool in `ClaudeProvider.json`. |
+| App/API/voice/email custom domains are unavailable | Local resolution failed for the four subdomains; public DNS returned Google-hosted addresses for app/API, but verified TLS connections also failed. Cloud Run listed mappings only for `withproperly.com` and `www.withproperly.com`. Testing therefore used the working Cloud Run application/service URLs. |
+| Voice does not end promptly after voicemail | The agent recognized voicemail, left its message, then repeatedly said goodbye until the 122-second call ended. The requested test was under one minute. Answered two-way audio, inbound caller context and live voice tools remain unverified in this run. |
+| Tuning work does not advance automatically | `propadmin-workflow-tuning` Cloud Scheduler was `PAUSED`. A private unseen-case test remained `running` in phase `sample`, with zero trials. That test was stopped through its API; the production scheduler was not resumed. |
+| Concurrent writes can exhaust retries | One isolated contact creation returned 409, `Concurrent updates to shared state; retry the operation`, while other test work was running. A later serialized attempt passed. This is an observed contention limit, not evidence of lost committed writes. |
+| Production search uses offline embeddings | API runtime/search output reported `local-deterministic-hash-v1`, 256 dimensions, `offline=true`. Vertex configuration exists but is inactive for these searches. Lexical search/citations passed; production semantic embedding quality was not validated. |
+| Portal functionality is not in this deployment | `/v1/portal` returned 404 and the deployed navigation uses Overview rather than Today/Inbox/Maintenance/Viewings. The portal implementation in the working tree was not exercised in production. `/v1/workflow-tuning` is available; `/v1/tuning` is not its endpoint. |
+
+Public `/healthz` requests returned Google-branded 404 pages, while ordinary
+service routes worked. This is consistent with the reserved paths ending in `z`
+documented in [Cloud Run known issues](https://docs.cloud.google.com/run/docs/known-issues),
+so these responses were not counted as seven service outages. A different public
+health path is needed for external monitoring.
+
+Raw, scoped evidence and the temporary test harness are in
+`/tmp/properly-prod-e2e-20261010/` (restricted local directory). Commands included
+`uv run python` for `probe.py`, `followup.py`, `agent_journey.py`,
+`browser_journey.py`, `phone.py`, `attachment.py`, and `tuning_test.py`, plus
+Chrome UI checks and read-only Cloud Run/Logging/Scheduler inspection. Initial
+handwritten MCP requests missing required transport headers were corrected;
+those harness errors are not product defects. `list_skills` is not a deployed
+MCP tool; the real agent used `get_skill` successfully.
+
+Temporary test grants were revoked, Browserbase sessions closed, the private tuning
+test stopped, and temporary credentials/full graph snapshots removed. Chrome was
+left signed in to the production app for the user's own visible-screen testing. Synthetic
+test sources, contacts, messages, runs, call and audit evidence remain in
+production for traceability. Valid new signup persistence/chat notification,
+PDF layout, real financial mutations, skill publication, answered audio and a
+fresh inbound PSTN call were not verified; none is represented as passed.
 
 ## Properly rebrand
 

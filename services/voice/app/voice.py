@@ -11,6 +11,7 @@ ElevenLabs API shapes (docs: elevenlabs.io/docs, via Context7 /websites/elevenla
   rejected if older than 30 minutes (same rules as the SDK's construct_event).
 """
 
+import asyncio
 import hashlib
 import hmac
 import json
@@ -103,7 +104,7 @@ def phone_target(state, entity_id):
 
 def person_by_phone(state, number):
     try:
-        number = normalise(number, {"type": "string"}, "phones")
+        number = provider_phone(number)
     except ValueError:
         return None
     return next(
@@ -116,6 +117,13 @@ def person_by_phone(state, number):
         ),
         None,
     )
+
+
+def provider_phone(number):
+    # Vonage SIP caller ids may omit + on an international number.
+    if isinstance(number, str) and number.isdigit() and not number.startswith("0"):
+        number = "+" + number
+    return normalise(number, {"type": "string"}, "phones")
 
 
 def call_entity(state, conversation_id):
@@ -263,7 +271,7 @@ def initiation(payload: dict, request: Request):
         }
         for name, value in (("from_number", caller), ("to_number", payload.get("called_number"))):
             try:
-                fields[name] = normalise(value, {"type": "string"}, name)
+                fields[name] = provider_phone(value)
             except (ValueError, TypeError):
                 pass  # withheld or non-E.164 caller ids are not stored
         call = app.state.graph.create_entity(
@@ -324,10 +332,14 @@ async def post_call(request: Request):
     body = await request.body()
     verify_signature(body, request.headers.get("elevenlabs-signature", ""))
     event = json.loads(body)
+    return await asyncio.to_thread(process_post_call, app, event)
+
+
+def process_post_call(app, event):
+    if event.get("type") == "call_initiation_failure":
+        return initiation_failure(app, event)
     if event.get("type") != "post_call_transcription":
-        return {
-            "status": "ignored"
-        }  # ponytail: audio and initiation-failure webhooks not stored yet
+        return {"status": "ignored"}  # audio is not stored here
     data = event["data"]
     conversation_id = data["conversation_id"]
     meta, analysis = data.get("metadata") or {}, data.get("analysis") or {}
@@ -424,3 +436,26 @@ async def post_call(request: Request):
         },
     )
     return {"call_id": call["id"], "document_id": job["document_id"], "agent": agent}
+
+
+def initiation_failure(app, event):
+    data = event["data"]
+    conversation_id = data["conversation_id"]
+    existing = call_entity(app.state.store.snapshot(), conversation_id)
+    reason = data.get("failure_reason") or "Call initiation failed"
+    status = {"busy": "busy", "no_answer": "no_answer"}.get(reason, "failed")
+    if existing and existing["fields"].get("status") == status:
+        return {"call_id": existing["id"], "status": status, "deduplicated": True}
+    fields = {"call_id": conversation_id, "provider": "elevenlabs", "status": status,
+              "ended_at": stamp(event.get("event_timestamp")), "end_reason": reason}
+    if existing:
+        call = app.state.graph.update_entity(existing["id"],
+            {"version": existing["version"], "fields": fields}, "voice", reason)
+    else:
+        call = app.state.graph.create_entity(
+            {"type": "call", "name": f"Call {conversation_id}",
+             "external_ids": {"elevenlabs": conversation_id}, "fields": fields}, "voice", reason)
+    notify_agent(app, "call.ended", [call["id"]], reason,
+                 {"conversation_id": conversation_id, "call_id": call["id"],
+                  "run_id": call["fields"].get("agent_session"), "status": status})
+    return {"call_id": call["id"], "status": status}

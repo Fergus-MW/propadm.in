@@ -7,7 +7,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 
-from .embeddings import cosine, local_vector
+from .embeddings import EmbeddingService, cosine, embedding_key, local_vector
 from .graph import add_edge
 from .providers import ClaudeProvider, ProviderNotConfigured
 from .store import ConflictError, identifier, now, publish
@@ -108,15 +108,22 @@ def predicate(expression, source, target):
 
 
 def entity_vector(state, entity, field="description"):
-    entry = next(
-        (
-            embedding
-            for embedding in state["embeddings"].values()
-            if embedding["owner"] == entity["id"] and embedding["field"] == field
-        ),
-        None,
-    )
-    return entry["vector"] if entry else local_vector(str(field_value(entity, field) or ""))
+    embedder = EmbeddingService()
+    entries = state["embeddings"]
+    # Read immutable vectors without cloning the whole collection in LazyState.
+    entry = dict.get(entries, embedding_key(entity["id"], field, embedder.model))
+    if not entry:
+        # Local pre-migration records used keys without their model.
+        entry = next((e for e in dict.values(entries)
+                      if e["owner"] == entity["id"] and e["field"] == field
+                      and e["model"] == embedder.model), None)
+    if entry:
+        return entry["vector"]
+    if embedder.provider:
+        # Never compare a hash fallback to a provider vector. An unindexed field
+        # contributes no similarity until its materialised vector is available.
+        return [0.0] * embedder.provider.dimension
+    return local_vector(str(field_value(entity, field) or ""))
 
 
 def pair_documents(state, source_id, target_id, window_days):

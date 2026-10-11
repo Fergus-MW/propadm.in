@@ -147,3 +147,26 @@ def test_retrieval_ranks_only_prefix_excludes_holdout_and_current_case(monkeypat
     assert examples and all(e["fields"]["case_id"] == training["case_id"] for e in examples)
     assert imported["case_id"] not in replay["state"]["entities"]
     assert holdout["case_id"] not in replay["state"]["entities"]
+
+
+def test_workflow_example_tool_uses_extension_handler_contract():
+    from fastapi.testclient import TestClient
+    from propadmin_core import Store
+    from propadmin_runtime import create_app
+
+    with TestClient(create_app(store=Store(), seed=False)) as client:
+        token = client.post('/v1/auth/login', json={'password': 'propadmin-local'}).json()['token']
+        token = client.post('/v1/mcp/tokens',
+                            headers={'Authorization': 'Bearer ' + token},
+                            json={'session_id': 'example-retrieval-test'}).json()['token']
+        headers = {'Authorization': 'Bearer ' + token, 'Accept': 'application/json, text/event-stream',
+                   'Mcp-Protocol-Version': '2025-11-25'}
+        response = client.post('/mcp', headers=headers, json={
+            'jsonrpc': '2.0', 'id': 1, 'method': 'tools/call',
+            'params': {'name': 'search_workflow_examples',
+                       'arguments': {'query': 'Acknowledge a connectivity test', 'limit': 1}},
+        })
+        assert response.status_code == 200
+        result = response.json()['result']
+        assert not result.get('isError'), result
+        assert result['structuredContent']['items'] == []

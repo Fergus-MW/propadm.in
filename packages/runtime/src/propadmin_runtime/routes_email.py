@@ -16,6 +16,7 @@ class SendEmail(BaseModel):
     body: str = Field(min_length=1, max_length=100_000)
     entity_ids: list[str] = []
     run_id: str | None = None
+    idempotency_key: str | None = Field(default=None, pattern=r"^[A-Za-z0-9._~-]{1,256}$")
 
 
 @router.post("/emails")
@@ -38,21 +39,22 @@ def _tool(path, name):
                     run["updated_at"] = now()
                     publish(state, "agent_run.subjects", {"run_id": run_id, "subjects": run["subjects"]})
 
-            app.state.store.mutate(claim)
+            try:
+                app.state.store.mutate(claim)
+            except Exception:
+                app.state.telemetry.emit("email.claim_failed", result, severity="ERROR")
         except Exception as error:
             record_action(
                 app.state.store, run_id, name, args, reason=args.get("reason", ""), error=str(error)
             )
             raise
-        record_action(
-            app.state.store,
-            run_id,
-            name,
-            args,
-            result,
-            args.get("reason", ""),
-            result.get("email_id"),
-        )
+        try:
+            record_action(
+                app.state.store, run_id, name, args, result, args.get("reason", ""),
+                result.get("email_id"),
+            )
+        except Exception:
+            app.state.telemetry.emit("email.audit_failed", result, severity="ERROR")
         return result
 
     return handler
@@ -81,6 +83,8 @@ TOOLS = {
                          "description": "Markdown; sent as plain text plus rendered HTML."},
                 "entity_ids": _IDS,
                 "reason": _REASON,
+                "idempotency_key": {"type": "string", "pattern": "^[A-Za-z0-9._~-]{1,256}$",
+                                    "description": "Reuse for retries of one logical send; use a new key for a deliberate repeat."},
             },
             "required": ["to", "subject", "body"],
             "additionalProperties": False,
@@ -99,6 +103,7 @@ TOOLS = {
                 "reply_all": {"type": "boolean"},
                 "entity_ids": _IDS,
                 "reason": _REASON,
+                "idempotency_key": {"type": "string", "pattern": "^[A-Za-z0-9._~-]{1,256}$"},
             },
             "required": ["email_id", "body"],
             "additionalProperties": False,

@@ -524,3 +524,28 @@ def test_tanner_script_is_linked_isolated_and_loading_preserves_edits(client):
         i["id"].startswith("demo-pro-") for i in client.get("/v1/portal").json()["items"]
     )
     assert not client.app.state.store.snapshot().get("portal_deliveries")
+
+
+@pytest.mark.parametrize('description', [
+    'Kitchen tap dripping into sink. No flooding or electrical risk.',
+    'No smoke or fire. The shower is broken.',
+    'No signs of flooding. The tap drips.',
+    'No gas smell. The boiler is not heating water.',
+])
+def test_denied_hazard_does_not_escalate_and_new_positive_evidence_does(client, description):
+    created = client.post('/v1/entities', json={
+        'type': 'ticket', 'name': 'Controlled routine repair', 'description': description,
+        'fields': {'urgency': 'routine'}, 'reason': 'Regression test',
+    }).json()
+
+    def projected():
+        return next(i for i in client.get('/v1/portal').json()['items'] if i['id'] == created['id'])
+
+    assert projected()['urgency'] == 'Routine'
+    response = client.patch('/v1/entities/' + created['id'], json={
+        'version': created['version'],
+        'description': description + ' Later, flooding is spreading across the floor.',
+        'reason': 'New positive safety evidence',
+    })
+    assert response.status_code == 200
+    assert projected()['urgency'] == 'Emergency'

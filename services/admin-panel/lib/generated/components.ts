@@ -7,6 +7,9 @@ export interface components {
             kind?: ("charge" | "payment" | "transfer" | "adjustment") | null;
             property_id: string;
         };
+        Batch: {
+            limit: number;
+        };
         CallRequest: {
             entity_id: string;
             objective: string;
@@ -177,6 +180,7 @@ export interface components {
         SendEmail: {
             body: string;
             entity_ids: string[];
+            idempotency_key?: string | null;
             run_id?: string | null;
             subject: string;
             to: string[] | string;

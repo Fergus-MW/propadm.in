@@ -106,7 +106,8 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
     async def invalid(request, exc):
         return JSONResponse(status_code=422, content={"detail": str(exc)})
 
-    @app.get("/healthz")
+    @app.get("/health")
+    @app.get("/healthz", include_in_schema=False)
     def health():
         return {"status": "ok", "service": service, "mode": cfg.mode}
 
@@ -121,6 +122,9 @@ def create_app(service="api", *, store=None, settings=None, seed=True):
         return {"required": True, "mode": cfg.mode}
 
     if service == "api":
+        from .routes_embeddings import router as embeddings_router
+
+        app.include_router(embeddings_router)
         from . import (
             mcp,
             portal_messages,

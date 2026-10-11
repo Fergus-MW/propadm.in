@@ -2,6 +2,7 @@
 
 import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from propadmin_core.store import ConflictError, publish
@@ -63,3 +64,16 @@ def test_import_refuses_non_empty_database():
     assert a.snapshot()["entities"] == {"e": {"n": 1}} and a.snapshot()["version"] == 4
     with pytest.raises(ValueError):
         a.import_state({})
+
+
+def test_concurrent_burst_commits_every_write_once():
+    workers = stores(8)
+    workers[0].mutate(lambda s: s.update(counter=0))
+
+    def work(store):
+        for _ in range(20):
+            store.mutate(lambda s: s.update(counter=s["counter"] + 1))
+
+    with ThreadPoolExecutor(max_workers=len(workers)) as pool:
+        list(pool.map(work, workers))
+    assert workers[0].snapshot()["counter"] == 160

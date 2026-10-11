@@ -48,7 +48,8 @@ resource "google_cloud_run_v2_service" "services" {
       }
     }
     scaling {
-      min_instance_count = 0
+      # Telephony initialization and live graph tools cannot wait for cold starts.
+      min_instance_count = contains(["api", "agent", "voice"], each.key) ? 1 : 0
       max_instance_count = each.key == "browser" ? 1 : 10 # browser sessions live in process memory
     }
     containers {
@@ -57,9 +58,10 @@ resource "google_cloud_run_v2_service" "services" {
         container_port = each.key == "admin-panel" ? 3000 : 8080
       }
       resources {
-        limits = { cpu = contains(["api", "agent"], each.key) ? "2" : "1", memory = each.key == "admin-panel" ? "512Mi" : (contains(["api", "agent"], each.key) ? "4Gi" : "2Gi")
+        limits = { cpu = contains(["api", "agent"], each.key) ? "2" : "1", memory = each.key == "admin-panel" ? "512Mi" : "4Gi"
         }
-        cpu_idle          = true
+        # Inbound events provision their durable queued sessions after responding.
+        cpu_idle          = each.key != "agent"
         startup_cpu_boost = true
       }
       dynamic "env" {
@@ -87,7 +89,7 @@ resource "google_cloud_run_v2_service" "services" {
         period_seconds        = 10
         failure_threshold     = 12
         http_get {
-          path = each.key == "admin-panel" ? "/" : "/healthz"
+          path = each.key == "admin-panel" ? "/" : "/health"
         }
       }
     }
@@ -113,6 +115,11 @@ resource "google_cloud_run_domain_mapping" "domains" {
   }
   spec {
     route_name = google_cloud_run_v2_service.services[each.value].name
+  }
+  lifecycle {
+    # Cloud Run omits the default certificate mode for CLI-created mappings.
+    # Preserve their live managed certificates rather than replacing them.
+    ignore_changes = [spec[0].certificate_mode]
   }
 }
 output "urls" {

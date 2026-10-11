@@ -14,7 +14,7 @@ from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
-from propadmin_core import ProviderNotConfigured
+from propadmin_core import IngestionService, ProviderNotConfigured
 from propadmin_core.graph import add_edge
 from propadmin_core.store import now
 from propadmin_runtime import create_app
@@ -22,6 +22,8 @@ from propadmin_runtime.auth import require_internal
 from propadmin_runtime.email_markdown import email_html
 from propadmin_runtime.email_threads import conversation_context
 from propadmin_runtime.services import call_service
+
+from services.email.app.delivery import delivery_key, finish, reserve
 
 AGENTMAIL_URL = os.getenv("AGENTMAIL_BASE_URL", "https://api.agentmail.to/v0").rstrip("/")
 
@@ -36,13 +38,14 @@ def personas():
     ]
 
 
-def agentmail(method, path, payload=None):
+def agentmail(method, path, payload=None, *, idempotency_key=None):
     key = os.getenv("AGENTMAIL_API_KEY")
     if not key:
         raise ProviderNotConfigured("AgentMail is not configured (AGENTMAIL_API_KEY)")
     response = httpx.request(
         method, AGENTMAIL_URL + path, json=payload, timeout=30,
-        headers={"Authorization": f"Bearer {key}"},
+        headers={"Authorization": f"Bearer {key}",
+                 **({"Idempotency-Key": idempotency_key} if idempotency_key else {})},
     )  # fmt: skip
     if response.status_code >= 400:
         raise HTTPException(502, f"AgentMail returned HTTP {response.status_code}")
@@ -85,8 +88,7 @@ def record_email(app, fields, entity_ids=(), run_id=None):
         for name, address in people
         if address
     ]
-    job = app.state.ingestion.ingest(
-        {
+    source = {
             "filename": f"{fields['message_id'].strip('<>')}.txt",
             "title": fields["subject"],
             "mime": "text/plain",
@@ -94,7 +96,13 @@ def record_email(app, fields, entity_ids=(), run_id=None):
             "text": text,
             "records": records,
         }
-    )
+    try:
+        job = app.state.ingestion.ingest(source)
+    except Exception:
+        # Provider metadata is authoritative even when model quotes are invalid.
+        # Keep the original source, exact identities and canonical communication.
+        job = IngestionService(app.state.store, extraction_provider="local").ingest(source)
+        job["delivery_warning"] = "Email recorded; model enrichment failed. Do not resend."
     email = find_email(app.state.store.snapshot(), fields["message_id"])
     for entity_id in entity_ids:
         app.state.graph.link_entities(
@@ -223,17 +231,21 @@ def build(app):
         entity_ids = payload.get("entity_ids") or []
         check_entities(app, entity_ids)
         inbox = payload.get("inbox") or f"{personas()[0]}@{domain()}"
-        sent = agentmail(
+        content = {"to": to, "subject": payload["subject"], "text": payload["body"],
+                   "html": email_html(payload["body"])}
+        key, fingerprint = delivery_key(payload, inbox, "send", content)
+        prior = reserve(app, key, fingerprint)
+        if prior.get("result"):
+            return {**prior["result"], "deduplicated": True}
+        sent = prior.get("sent") or agentmail(
             "POST",
             f"/inboxes/{quote(inbox, safe='')}/messages/send",
-            {"to": to, "subject": payload["subject"], "text": payload["body"],
-             "html": email_html(payload["body"])},
+            content, idempotency_key=key,
         )
         fields = outbound_fields(
             sent, inbox, to, payload["subject"], payload["body"], payload.get("run_id")
         )
-        email, job = record_email(app, fields, entity_ids, payload.get("run_id"))
-        return {**sent, "email_id": email["id"], "document_id": job["document_id"]}
+        return finish(app, key, sent, fields, entity_ids, payload.get("run_id"), record_email)
 
     @internal.post("/reply")
     async def reply(request: Request):
@@ -249,10 +261,16 @@ def build(app):
         _, related_ids = conversation_context(app.state.store.snapshot(), prior)
         entity_ids = sorted(set(entity_ids) | set(related_ids))
         inbox, reply_all = prior["mailbox"], bool(payload.get("reply_all"))
-        sent = agentmail(
+        content = {"text": payload["body"], "html": email_html(payload["body"]), "reply_all": reply_all}
+        operation = f"reply:{prior['message_id']}"
+        key, fingerprint = delivery_key(payload, inbox, operation, content)
+        receipt = reserve(app, key, fingerprint)
+        if receipt.get("result"):
+            return {**receipt["result"], "deduplicated": True}
+        sent = receipt.get("sent") or agentmail(
             "POST",
             f"/inboxes/{quote(inbox, safe='')}/messages/{quote(prior['message_id'], safe='')}/reply",
-            {"text": payload["body"], "html": email_html(payload["body"]), "reply_all": reply_all},
+            content, idempotency_key=key,
         )
         if prior.get("direction") == "outbound":
             to = prior.get("to_addresses", [])
@@ -268,8 +286,7 @@ def build(app):
             in_reply_to=prior["message_id"],
             references=prior.get("references", []) + [prior["message_id"]],
         )  # fmt: skip
-        email, job = record_email(app, fields, entity_ids, payload.get("run_id"))
-        return {**sent, "email_id": email["id"], "document_id": job["document_id"]}
+        return finish(app, key, sent, fields, entity_ids, payload.get("run_id"), record_email)
 
     @app.post("/webhooks/agentmail")
     async def webhook(request: Request):
