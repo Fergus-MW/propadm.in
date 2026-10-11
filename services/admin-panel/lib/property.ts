@@ -142,3 +142,8 @@ export function editableFields(
     }),
   );
 }
+
+/** Version change since an edit began; edits save against `from` so the API rejects stale writes. */
+export function editConflict(base: { version: number }, current: { version: number }) {
+  return current.version === base.version ? null : { from: base.version, to: current.version };
+}

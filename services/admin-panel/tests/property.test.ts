@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  editConflict,
   editableFields,
   expiry,
   minorUnits,
@@ -99,5 +100,9 @@ describe("property ledger presentation", () => {
     expect(stalePrice("2026-03-01", now)).toBe(true);
     expect(stalePrice(undefined, now)).toBe(true);
     expect(stalePrice("2026-10-01", now)).toBe(false);
+  });
+  it("keeps an open edit pinned to its starting version after a concurrent save", () => {
+    expect(editConflict({ version: 3 }, { version: 3 })).toBeNull();
+    expect(editConflict({ version: 3 }, { version: 4 })).toEqual({ from: 3, to: 4 });
   });
 });
