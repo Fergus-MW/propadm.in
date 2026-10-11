@@ -1,0 +1,161 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Geist;src:url(Geist-Variable.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:GeistMono;src:url(GeistMono-Variable.woff2) format("woff2");font-weight:100 900}
+html,body{margin:0;background:#0a0a0a}
+svg{display:block}
+.t{font-family:Geist;fill:#fafafa;font-weight:600;font-size:16px}
+.s{font-family:GeistMono;fill:#8a8a8a;font-size:11px}
+.l{font-family:GeistMono;fill:#6b6b6b;font-size:10px;letter-spacing:.06em}
+.row{font-family:GeistMono;font-size:12px}
+</style></head>
+<body>
+<svg id="svg" width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#1c1c1c"/></pattern>
+  <filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft" x="-400%" y="-400%" width="900%" height="900%"><feGaussianBlur stdDeviation="10"/></filter>
+  <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" fill="#3a3a3a"/></marker>
+  <linearGradient id="cyl" x1="0" x2="1"><stop offset="0" stop-color="#151515"/><stop offset=".5" stop-color="#1b1b1b"/><stop offset="1" stop-color="#121212"/></linearGradient>
+</defs>
+<rect width="1280" height="720" fill="#0a0a0a"/>
+<rect width="1280" height="720" fill="url(#dots)"/>
+<g id="edges"></g><g id="boxes"></g><g id="fx"></g><g id="packets"></g>
+</svg>
+<script>
+const NS="http://www.w3.org/2000/svg", L=12;
+const C={crm:"#8b5cff",email:"#00adfc",call:"#00c4b3",doc:"#ff8262",bank:"#f0d653",agent:"#8b5cff",ok:"#00c4b3",rules:"#f0d653"};
+const $=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e};
+const G={edges:document.getElementById("edges"),boxes:document.getElementById("boxes"),fx:document.getElementById("fx"),packets:document.getElementById("packets")};
+const text=(x,y,str,cls,parent,anchor="start")=>{const e=$("text",{x,y,class:cls,"text-anchor":anchor},parent);e.textContent=str;return e};
+
+// header
+text(48,58,"PROPERLY  ·  ARCHITECTURE","l",G.boxes).setAttribute("style","fill:#8a8a8a;font-size:11px;letter-spacing:.2em");
+text(48,90,"Every source, one graph, one gateway.","t",G.boxes).setAttribute("style","font-size:26px;font-weight:600;letter-spacing:-.02em");
+
+// boxes
+const boxes={};
+function box(id,x,y,w,h,title,sub){const g=$("g",{},G.boxes);
+  const r=$("rect",{x,y,width:w,height:h,rx:12,fill:"#111",stroke:"#262626","stroke-width":1.5},g);
+  if(title)text(x+16,y+(h>60?28:22),title,"t",g);
+  if(sub)text(x+16,y+(h>60?46:38),sub,"s",g);
+  boxes[id]={r,x,y,w,h};return g}
+const SRC=[["crm","CRM JSON","customers · tenancies"],["email","Emails","EML threads"],["call","Call transcripts","voice + post-call"],["doc","Documents","quotes · invoices · PDF"],["bank","Bank CSV · OFX","statements"]];
+text(48,150,"SOURCES","l",G.boxes);
+SRC.forEach(([id,t,s],i)=>{const y=170+i*76;box(id,48,y,212,52,t,s);$("circle",{cx:246,cy:y+14,r:4,fill:C[id]},G.boxes)});
+box("ing",316,236,196,248,"ingestion",":8001");
+const STAGES=["parse","extract","resolve","embed"],stageEls=STAGES.map((s,i)=>{const y=310+i*40;
+  const r=$("rect",{x:332,y:y-18,width:164,height:30,rx:7,fill:"#161616"},G.boxes);
+  const d=$("circle",{cx:350,cy:y-3,r:3.5,fill:"#3a3a3a"},G.boxes);
+  const tx=text(364,y+1,s,"row",G.boxes);tx.setAttribute("fill","#9a9a9a");return{r,d,tx}});
+// store cylinder
+const SX=660,STOP=258,SBOT=462,SRX=100,SRY=18;
+const sg=$("g",{},G.boxes);
+$("path",{d:`M${SX-SRX},${STOP} L${SX-SRX},${SBOT} A${SRX},${SRY} 0 0 0 ${SX+SRX},${SBOT} L${SX+SRX},${STOP}`,fill:"url(#cyl)",stroke:"#262626","stroke-width":1.5},sg);
+boxes.store={r:$("ellipse",{cx:SX,cy:STOP,rx:SRX,ry:SRY,fill:"#181818",stroke:"#262626","stroke-width":1.5},sg)};
+text(SX,500,"Graph store","t",sg,"middle");text(SX,518,"JSON · GCS · SurrealDB","s",sg,"middle");
+box("rules",580,112,160,64,"rules",":8002 · edge rules");
+box("api",830,262,150,196,"api",":8000");
+const PORTS=["REST","SSE","/mcp"],portEls=PORTS.map((p,i)=>{const y=336+i*38;
+  const r=$("rect",{x:846,y:y-18,width:118,height:28,rx:7,fill:"#161616"},G.boxes);
+  const tx=text(862,y+1,p,"row",G.boxes);tx.setAttribute("fill","#9a9a9a");return{r,tx}});
+box("admin",1050,104,190,168,"admin-panel","Next.js · cosmos.gl");
+box("agent",1050,306,190,64,"agent","Claude Managed Agents");
+box("voice",1050,418,190,52,"voice","ElevenLabs · Vonage");
+box("email2",1050,490,190,52,"email","AgentMail");
+box("browser",1050,562,190,52,"browser","Browserbase");
+text(SX,652,"agents reach the graph only through /mcp","l",G.boxes,"middle").setAttribute("style","fill:#555;font-size:11px;letter-spacing:.08em");
+
+// edges
+const P={};
+function edge(id,d,label,lx,ly){P[id]=$("path",{d,fill:"none",stroke:"#2a2a2a","stroke-width":1.5,"marker-end":"url(#arr)"},G.edges);if(label)text(lx,ly,label,"l",G.edges)}
+SRC.forEach(([id],i)=>{const y=196+i*76;edge("s"+i,`M260,${y} C290,${y} 280,360 314,360`)});
+edge("ing_store",`M512,360 L558,360`);
+edge("rules_store",`M660,176 L660,238`,"RECOMPUTE · LAYOUT",672,212);
+edge("store_api",`M760,346 L828,346`,"READ",772,336);
+edge("api_store",`M830,376 L762,376`,"WRITE",772,396);
+edge("api_admin",`M980,336 C1016,336 1012,186 1048,186`);
+edge("admin_api",`M1050,214 C1022,214 1010,322 982,322`);
+text(1040,170,"REST · SSE","l",G.edges,"end");
+edge("agent_api",`M1050,330 C1018,330 1014,410 982,410`);
+edge("api_agent",`M980,420 C1022,420 1018,348 1048,348`);
+text(1004,384,"MCP","l",G.edges);
+edge("voice_api",`M1050,444 C1010,444 1012,432 982,432`);
+edge("email_api",`M1050,516 C1006,516 1006,440 982,440`);
+edge("browser_api",`M1050,588 C1000,588 1002,448 982,448`);
+
+// constellation (store) + mirrored mini graph (admin)
+let seed=7;const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296};
+const N=26,nodes=[];while(nodes.length<N){const a=rnd()*Math.PI*2,r=Math.sqrt(rnd());const x=SX+Math.cos(a)*r*78,y=362+Math.sin(a)*r*60;
+  if(nodes.every(n=>Math.hypot(n.x-x,n.y-y)>17))nodes.push({x,y,c:Object.values(C)[nodes.length%5]})}
+const links=[];nodes.forEach((n,i)=>{nodes.map((m,j)=>[Math.hypot(n.x-m.x,n.y-m.y),j]).sort((a,b)=>a[0]-b[0]).slice(1,3).forEach(([,j])=>{if(!links.some(l=>l[0]===j&&l[1]===i))links.push([i,j])})});
+const mini=n=>({x:1145+(n.x-SX)*0.95,y:206+(n.y-362)*0.7});
+function graphEls(map,scale){const lg=$("g",{},G.boxes),ng=$("g",{},G.boxes);
+  const ls=links.map(([a,b])=>$("line",{stroke:"#2c2c2c","stroke-width":1},lg));
+  const ns=nodes.map(n=>({halo:$("circle",{r:9*scale,fill:n.c,opacity:0,filter:"url(#soft)"},ng),dot:$("circle",{r:3.2*scale,fill:"#4a4a4a"},ng)}));
+  return{map,ls,ns,scale}}
+const storeG=graphEls(n=>n,1),adminG=graphEls(mini,0.85);
+
+// timeline helpers
+const mod=x=>((x%L)+L)%L;
+const local=(t,s)=>mod(t-s);
+const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+const EV=[];
+const SRC_ORDER=[0,1,2,3,4,1,3,0,4,2];
+SRC_ORDER.forEach((src,k)=>{const s=k*1.2,c=C[SRC[src][0]],node=(k*7+3)%N;
+  EV.push({kind:"move",s,d:.9,path:"s"+src,c},{kind:"hit",s:s+.9,box:"ing",c},
+    ...STAGES.map((_,r)=>({kind:"stage",s:s+.9+r*.2,d:.32,r,c})),
+    {kind:"move",s:s+1.7,d:.45,path:"ing_store",c},{kind:"node",s:s+2.15,g:"store",n:node,c},{kind:"hit",s:s+2.15,box:"store",c},
+    {kind:"move",s:s+2.25,d:.4,path:"store_api",c},{kind:"port",s:s+2.65,d:.5,p:1,c},
+    {kind:"move",s:s+2.7,d:.7,path:"api_admin",c},{kind:"node",s:s+3.4,g:"admin",n:node,c},{kind:"hit",s:s+3.4,box:"admin",c})});
+[1.0,5.0,9.0].forEach((s,i)=>{const node=(i*11+5)%N;
+  EV.push({kind:"move",s,d:.65,path:"agent_api",c:C.agent},{kind:"hit",s,box:"agent",c:C.agent},{kind:"port",s:s+.6,d:.6,p:2,c:C.agent},
+    {kind:"move",s:s+.7,d:.4,path:"api_store",c:C.agent},{kind:"node",s:s+1.1,g:"store",n:node,c:C.agent},{kind:"hit",s:s+1.1,box:"store",c:C.agent},
+    {kind:"move",s:s+1.2,d:.4,path:"store_api",c:C.ok},{kind:"move",s:s+1.6,d:.65,path:"api_agent",c:C.ok},{kind:"hit",s:s+2.25,box:"agent",c:C.ok})});
+[["voice_api",2.6,"voice",C.call],["email_api",6.6,"email2",C.email],["browser_api",10.6,"browser",C.doc]].forEach(([path,s,b,c],i)=>{
+  EV.push({kind:"hit",s,box:b,c},{kind:"move",s,d:.7,path,c},{kind:"port",s:s+.7,d:.5,p:0,c},{kind:"move",s:s+.75,d:.4,path:"api_store",c},
+    {kind:"node",s:s+1.15,g:"store",n:(i*9+14)%N,c},{kind:"hit",s:s+1.15,box:"store",c})});
+[4.2,10.2].forEach(s=>EV.push({kind:"hit",s,box:"rules",c:C.rules},{kind:"move",s,d:.6,path:"rules_store",c:C.rules},{kind:"ripple",s:s+.6},{kind:"hit",s:s+.6,box:"store",c:C.rules}));
+
+const plen={};for(const k in P)plen[k]=P[k].getTotalLength();
+const pt=(path,f)=>P[path].getPointAtLength(Math.max(0,Math.min(1,f))*plen[path]);
+const packetEls=[];
+function hexMix(a,b,f){const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));const x=p(a),y=p(b);return"#"+x.map((v,i)=>Math.round(v+(y[i]-v)*f).toString(16).padStart(2,"0")).join("")}
+
+window.render=function(t){
+  t=mod(t);
+  const boxHit={},stage=STAGES.map(()=>null),port=PORTS.map(()=>null),nodeHit={store:{},admin:{}};let ripple=-1;
+  const moves=[];
+  for(const e of EV){const u=local(t,e.s);
+    if(e.kind==="move"&&u<e.d)moves.push([e,u/e.d]);
+    else if(e.kind==="hit"&&u<.7){const v=1-u/.7;if(!boxHit[e.box]||boxHit[e.box][0]<v)boxHit[e.box]=[v,e.c]}
+    else if(e.kind==="stage"&&u<e.d)stage[e.r]=[1-u/e.d,e.c];
+    else if(e.kind==="port"&&u<e.d)port[e.p]=[1-u/e.d,e.c];
+    else if(e.kind==="node"&&u<2.4){const v=Math.exp(-u*1.6);const cur=nodeHit[e.g][e.n];if(!cur||cur[0]<v)nodeHit[e.g][e.n]=[v,e.c]}
+    else if(e.kind==="ripple"&&u<1.6)ripple=u/1.6;}
+  for(const id in boxes){const h=boxHit[id];const b=boxes[id].r;
+    b.setAttribute("stroke",h?hexMix("#262626",h[1],h[0]):"#262626");b.setAttribute("stroke-width",h?1.5+h[0]:1.5)}
+  stageEls.forEach((s,i)=>{const h=stage[i];s.r.setAttribute("fill",h?hexMix("#161616",h[1],.22*h[0]+.06):"#161616");s.d.setAttribute("fill",h?h[1]:"#3a3a3a");s.tx.setAttribute("fill",h?"#fafafa":"#9a9a9a")});
+  portEls.forEach((s,i)=>{const h=port[i];s.r.setAttribute("fill",h?hexMix("#161616",h[1],.25*h[0]+.06):"#161616");s.tx.setAttribute("fill",h?"#fafafa":"#9a9a9a")});
+  // constellation with recompute jitter
+  const jit=ripple>=0?Math.sin(ripple*Math.PI)*(1-ripple):0;
+  for(const G2 of [storeG,adminG]){const which=G2===storeG?"store":"admin";
+    const pos=nodes.map((n,i)=>{const p=G2.map(n);const a=i*2.3;return{x:p.x+Math.cos(a+t*Math.PI)*jit*6*G2.scale,y:p.y+Math.sin(a*1.7+t*Math.PI)*jit*6*G2.scale}});
+    links.forEach(([a,b],i)=>{const l=G2.ls[i];l.setAttribute("x1",pos[a].x);l.setAttribute("y1",pos[a].y);l.setAttribute("x2",pos[b].x);l.setAttribute("y2",pos[b].y)});
+    nodes.forEach((n,i)=>{const h=nodeHit[which][i];const e=G2.ns[i];
+      e.dot.setAttribute("cx",pos[i].x);e.dot.setAttribute("cy",pos[i].y);e.halo.setAttribute("cx",pos[i].x);e.halo.setAttribute("cy",pos[i].y);
+      e.dot.setAttribute("fill",h?hexMix("#4a4a4a",h[1],Math.min(1,h[0]*1.6)):hexMix("#4a4a4a",n.c,.35));
+      e.dot.setAttribute("r",(3.2+(h?h[0]*2.2:0))*G2.scale);e.halo.setAttribute("opacity",h?h[0]*.9:0)})}
+  // ripple ring
+  G.fx.innerHTML="";
+  if(ripple>=0){$("ellipse",{cx:SX,cy:362,rx:40+ripple*90,ry:30+ripple*70,fill:"none",stroke:C.rules,"stroke-width":2,opacity:(1-ripple)*.7},G.fx)}
+  // packets
+  while(packetEls.length<moves.length){const g=$("g",{},G.packets);packetEls.push({g,trail:[0,1,2,3,4].map(i=>$("circle",{r:4-i*.6,fill:"#fff"},g)),head:$("circle",{r:5,fill:"#fff",filter:"url(#glow)"},g)})}
+  packetEls.forEach((p,i)=>{const m=moves[i];p.g.setAttribute("display",m?"":"none");if(!m)return;
+    const [e,f]=m,fe=ease(f),q=pt(e.path,fe);p.head.setAttribute("cx",q.x);p.head.setAttribute("cy",q.y);p.head.setAttribute("fill",e.c);
+    p.trail.forEach((c,j)=>{const r=pt(e.path,ease(Math.max(0,f-(j+1)*.045)));c.setAttribute("cx",r.x);c.setAttribute("cy",r.y);c.setAttribute("fill",e.c);c.setAttribute("opacity",.5-j*.09)})});
+};
+window.ready=document.fonts.ready.then(()=>{render(0);return true});
+if(!location.hash.includes("capture")){const t0=performance.now();const loop=()=>{render((performance.now()-t0)/1000);requestAnimationFrame(loop)};document.fonts.ready.then(loop)}
+</script></body></html>
