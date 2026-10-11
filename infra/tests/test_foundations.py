@@ -1,6 +1,7 @@
 """Small checks for schema drift, migration errors and reproducible lock compaction."""
 
 import json
+import os
 import tomllib
 from pathlib import Path
 
@@ -56,6 +57,17 @@ def test_dev_environment_shared_path_and_shell_precedence(tmp_path, monkeypatch)
     env = dev.environment()
     assert env['API_PORT'] == '8123'
     assert env['PROPADMIN_DATA_PATH'] == str(tmp_path / 'data/shared.json')
+
+
+def test_dev_environment_puts_repo_root_on_pythonpath(tmp_path, monkeypatch):
+    from infra.scripts import dev
+
+    monkeypatch.setattr(dev, 'ROOT', tmp_path)
+    monkeypatch.setenv('PROPADMIN_MODE', 'local')
+    monkeypatch.setenv('PYTHONPATH', f'/extra{os.pathsep}{tmp_path}')
+    paths = dev.environment()['PYTHONPATH'].split(os.pathsep)
+    # Services import `services.<name>.app.*`, as the images do with PYTHONPATH=/app.
+    assert paths == [str(tmp_path), '/extra']
 
 
 def test_dev_port_conflicts_and_clean_process_group_shutdown():
