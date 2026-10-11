@@ -168,3 +168,15 @@ def test_provider_and_ambiguous_receipts_are_not_guessed_as_tenant_rent():
     with pytest.raises(ValueError, match="direction conflicts"):
         ingest.ingest({"filename": "contradictory-receipt.txt", "source_type": "receipt", "text":
                        ambiguous + "Category: landlord_contribution\nDirection: outgoing\n"})
+
+
+def test_email_header_address_owned_by_company_is_not_a_new_person():
+    store, ingest, _, _ = setup()
+    company = GraphService(store).create_entity({"type": "company", "name": "Example Agency", "fields": {
+        "type": "managing agent", "domains": ["agency.test"], "emails": ["repairs@agency.test"],
+    }})
+    email = "From: Alice Tenant <alice@example.test>\nTo: repairs@agency.test\nSubject: Leak\n\nWater through the kitchen ceiling.\n"
+    job = ingest.ingest({"filename": "leak.eml", "mime": "message/rfc822", "text": email})
+    people = [e for e in store.snapshot()["entities"].values() if e["type"] == "person"]
+    assert [e["fields"]["emails"] for e in people] == [["alice@example.test"]]
+    assert company["id"] in job["entities"]

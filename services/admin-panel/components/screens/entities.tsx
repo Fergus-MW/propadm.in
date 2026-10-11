@@ -24,7 +24,7 @@ import {
   type RecordData,
 } from "@/lib/api";
 import { useAction, useData, useItems } from "@/lib/hooks";
-import { editableFields, entityHref } from "@/lib/property";
+import { editConflict, editableFields, entityHref } from "@/lib/property";
 import { TicketCompletion, TicketCompletionEditor } from "./ticket-completion";
 export function Entities({ tickets = false }: { tickets?: boolean }) {
   const [q, setQ] = useState("");
@@ -202,6 +202,7 @@ export function EntityDetail({ id }: { id: string }) {
   const router = useRouter();
   const action = useAction<Entity>();
   const [edit, setEdit] = useState(false);
+  const [draft, setDraft] = useState(0);
   const [merge, setMerge] = useState(false);
   const [target, setTarget] = useState("");
   const [reason, setReason] = useState("");
@@ -247,8 +248,9 @@ export function EntityDetail({ id }: { id: string }) {
       <p className="lead">{entity.description || "No description yet."}</p>
       {edit && (
         <EntityEditor
-          key={entity.version}
+          key={draft}
           entity={entity}
+          onReload={() => setDraft((n) => n + 1)}
           onClose={() => setEdit(false)}
         />
       )}
@@ -377,11 +379,17 @@ export function EntityDetail({ id }: { id: string }) {
 }
 function EntityEditor({
   entity,
+  onReload,
   onClose,
 }: {
   entity: Entity;
+  onReload: () => void;
   onClose: () => void;
 }) {
+  // Edits stay pinned to the version they started from, so a concurrent save
+  // never silently replaces the draft; the API rejects the stale write instead.
+  const [base] = useState(entity);
+  const conflict = editConflict(base, entity);
   const [name, setName] = useState(entity.name);
   const [description, setDescription] = useState(entity.description);
   const [fields, setFields] = useState(
@@ -420,7 +428,7 @@ function EntityEditor({
                   fields: editableFields({ ...parsed, ...(entity.type === "ticket" ? {
                     ...(status ? { status } : {}), final_answer: finalAnswer, reasoning,
                   } : {}) }, object(schema?.fields)),
-                  version: entity.version,
+                  version: base.version,
                   reason,
                 },
               },
@@ -478,10 +486,21 @@ function EntityEditor({
             Cancel
           </Button>
         </div>
-        <p className="caption">
-          Saving uses version {entity.version}. A conflicting edit must be
-          reloaded.
-        </p>
+        {conflict ? (
+          <p className="caption" role="alert">
+            This record changed to version {conflict.to} while you were
+            editing version {conflict.from}. Copy anything you need, then{" "}
+            <button type="button" className="draw-underline" onClick={onReload}>
+              load the latest version
+            </button>
+            .
+          </p>
+        ) : (
+          <p className="caption">
+            Saving uses version {base.version}. A conflicting edit must be
+            reloaded.
+          </p>
+        )}
       </form>
     </Section>
   );

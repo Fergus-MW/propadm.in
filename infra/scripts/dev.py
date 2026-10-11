@@ -58,6 +58,9 @@ def environment():
     env.setdefault("ADMIN_PASSWORD", "propadmin-local")
     env.setdefault("TOKEN_SECRET", "local-development-signing-key")
     env.setdefault("INTERNAL_SERVICE_TOKEN", "local-internal-token")
+    # Match the images' PYTHONPATH so `services.<name>.app` imports resolve locally.
+    paths = [str(ROOT), *filter(None, env.get("PYTHONPATH", "").split(os.pathsep))]
+    env["PYTHONPATH"] = os.pathsep.join(dict.fromkeys(paths))
     env["PYTHONUNBUFFERED"] = "1"
     return env
 

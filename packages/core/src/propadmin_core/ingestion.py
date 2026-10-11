@@ -110,7 +110,19 @@ def local_candidates(state, text, payload):
     if payload.get("mime") in ("message/rfc822", "application/eml") or payload.get(
         "filename", ""
     ).endswith(".eml"):
-        records = email_records(text) + records
+        # A header address already held by a company or provider is that entity,
+        # not a new person; the exact-mention pass below links it instead.
+        owned = {
+            address.casefold()
+            for entity in state["entities"].values()
+            if entity["type"] != "person" and not entity.get("merged_into")
+            for address in entity.get("fields", {}).get("emails") or []
+        }
+        records = [
+            record for record in email_records(text)
+            if record["type"] != "person"
+            or not {a.casefold() for a in record["fields"]["emails"]} <= owned
+        ] + records
     if payload.get("mime") == "application/json" and not records:
         parsed = json.loads(text)
         records = parsed if isinstance(parsed, list) else parsed.get("records", [parsed])

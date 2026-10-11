@@ -140,7 +140,10 @@ export function Confirm({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{children}</DialogDescription>
+          {/* Callers pass form controls, which are invalid inside the default <p>. */}
+          <DialogDescription asChild>
+            <div>{children}</div>
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  editConflict,
   editableFields,
   expiry,
   minorUnits,
@@ -12,7 +13,7 @@ import { bytesBase64, sourceMime } from "@/lib/source";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Evidence } from "@/components/screens/entities";
-import { decodeRouteSegment } from "@/lib/routes";
+import { decodeRouteSegment, sectionLabel } from "@/lib/routes";
 
 describe("property ledger presentation", () => {
   it("decodes canonical route IDs once before constructing API requests", () => {
@@ -99,5 +100,15 @@ describe("property ledger presentation", () => {
     expect(stalePrice("2026-03-01", now)).toBe(true);
     expect(stalePrice(undefined, now)).toBe(true);
     expect(stalePrice("2026-10-01", now)).toBe(false);
+  });
+  it("keeps an open edit pinned to its starting version after a concurrent save", () => {
+    expect(editConflict({ version: 3 }, { version: 3 })).toBeNull();
+    expect(editConflict({ version: 3 }, { version: 4 })).toEqual({ from: 3, to: 4 });
+  });
+  it("labels breadcrumbs for routes outside the navigation", () => {
+    const nav = [{ href: "/", label: "Today" }, { href: "/portal/inbox", label: "Inbox" }];
+    expect(sectionLabel("/", nav)).toBe("Today");
+    expect(sectionLabel("/portal/inbox", nav)).toBe("Inbox");
+    expect(sectionLabel("/portal/settings", nav)).toBe("Settings");
   });
 });
