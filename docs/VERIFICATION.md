@@ -70,6 +70,12 @@ frontend types/build, generated API contracts, Terraform and Compose validation.
 `make schema-check` applied migrations 001–005 against SurrealDB 3.3.0.
 Frontend ESLint passed with one existing generated-import warning.
 
+Before merging, the newer `main` maintenance skills, seed refresh and documentation
+were integrated. `SURREAL_TEST_URL=http://127.0.0.1:8008
+SURREAL_TEST_PASSWORD=local-surreal make check` passed **164 Python tests**,
+**29 frontend tests**, **four landing-server tests**, lint, types/build, generated
+API contracts, Terraform and Compose validation on the combined tree.
+
 The final deployment uses image tag `prod-fixes-20261011-1125`. The post-cutover
 retest passed all seven public health checks, portal/property/document/tuning
 reads, controlled email retry/delivery, and browser MCP actions. A test-harness
