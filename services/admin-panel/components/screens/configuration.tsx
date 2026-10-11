@@ -491,9 +491,8 @@ export function Settings() {
           </Section>
           <Section title="Runtime boundaries">
             <p>
-              This build runs the admin panel, API and ingestion services.
-              Provider configuration and local extraction capabilities are
-              reported above.
+              The services this build runs, their provider configuration and
+              local extraction capabilities are reported above.
             </p>
           </Section>
         </>

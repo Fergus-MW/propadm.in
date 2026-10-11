@@ -32,6 +32,7 @@ import { FormInput } from "./ui/Input";
 import { State } from "./common";
 import { Wordmark } from "./wordmark";
 import { PortalAlert } from "./portal/workspace";
+import { sectionLabel } from "@/lib/routes";
 const groups = [
   {
     label: "Property manager",
@@ -254,11 +255,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <span>Property operations</span>
             <span className="topbar-divider">/</span>
             <span className="caption">
-              {groups
-                .flatMap((g) => g.items)
-                .find(
-                  (item) => item.href !== "/" && pathname.startsWith(item.href),
-                )?.label ?? "Today"}
+              {sectionLabel(pathname, groups.flatMap((g) => g.items))}
             </span>
           </div>
           <Link className="draw-underline topbar-search" href="/search">
