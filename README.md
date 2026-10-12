@@ -111,7 +111,7 @@ every step lands in the [change log](#how-actions-stay-accountable).
 
 <div align="center">
 
-[![Properly architecture: sources flow through ingestion into the graph store, out to the admin panel over SSE, with agents reaching the graph only through /mcp](docs/media/architecture.gif)](docs/media/architecture.mp4)
+<a href="docs/media/architecture.mp4"><img src="docs/media/architecture.gif" width="420" alt="Properly architecture: sources flow through ingestion into the graph store, out to the admin panel over SSE, with agents reaching the graph only through /mcp"></a>
 
 <sub>Sources are parsed, extracted, resolved and embedded into one graph store. The rules
 service recomputes edges and layout, the API serves REST and SSE to the admin panel, and

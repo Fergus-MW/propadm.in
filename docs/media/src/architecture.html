@@ -11,7 +11,7 @@ svg{display:block}
 .row{font-family:GeistMono;font-size:12px}
 </style></head>
 <body>
-<svg id="svg" width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+<svg id="svg" width="720" height="1280" viewBox="0 0 720 1280" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#1c1c1c"/></pattern>
   <filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
@@ -19,8 +19,8 @@ svg{display:block}
   <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" fill="#3a3a3a"/></marker>
   <linearGradient id="cyl" x1="0" x2="1"><stop offset="0" stop-color="#151515"/><stop offset=".5" stop-color="#1b1b1b"/><stop offset="1" stop-color="#121212"/></linearGradient>
 </defs>
-<rect width="1280" height="720" fill="#0a0a0a"/>
-<rect width="1280" height="720" fill="url(#dots)"/>
+<rect width="720" height="1280" fill="#0a0a0a"/>
+<rect width="720" height="1280" fill="url(#dots)"/>
 <g id="edges"></g><g id="boxes"></g><g id="fx"></g><g id="packets"></g>
 </svg>
 <script>
@@ -30,10 +30,6 @@ const $=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const 
 const G={edges:document.getElementById("edges"),boxes:document.getElementById("boxes"),fx:document.getElementById("fx"),packets:document.getElementById("packets")};
 const text=(x,y,str,cls,parent,anchor="start")=>{const e=$("text",{x,y,class:cls,"text-anchor":anchor},parent);e.textContent=str;return e};
 
-// header
-text(48,58,"PROPERLY  ·  ARCHITECTURE","l",G.boxes).setAttribute("style","fill:#8a8a8a;font-size:11px;letter-spacing:.2em");
-text(48,90,"Every source, one graph, one gateway.","t",G.boxes).setAttribute("style","font-size:26px;font-weight:600;letter-spacing:-.02em");
-
 // boxes
 const boxes={};
 function box(id,x,y,w,h,title,sub){const g=$("g",{},G.boxes);
@@ -42,55 +38,51 @@ function box(id,x,y,w,h,title,sub){const g=$("g",{},G.boxes);
   if(sub)text(x+16,y+(h>60?46:38),sub,"s",g);
   boxes[id]={r,x,y,w,h};return g}
 const SRC=[["crm","CRM JSON","customers · tenancies"],["email","Emails","EML threads"],["call","Call transcripts","voice + post-call"],["doc","Documents","quotes · invoices · PDF"],["bank","Bank CSV · OFX","statements"]];
-text(48,150,"SOURCES","l",G.boxes);
-SRC.forEach(([id,t,s],i)=>{const y=170+i*76;box(id,48,y,212,52,t,s);$("circle",{cx:246,cy:y+14,r:4,fill:C[id]},G.boxes)});
-box("ing",316,236,196,248,"ingestion",":8001");
-const STAGES=["parse","extract","resolve","embed"],stageEls=STAGES.map((s,i)=>{const y=310+i*40;
-  const r=$("rect",{x:332,y:y-18,width:164,height:30,rx:7,fill:"#161616"},G.boxes);
-  const d=$("circle",{cx:350,cy:y-3,r:3.5,fill:"#3a3a3a"},G.boxes);
-  const tx=text(364,y+1,s,"row",G.boxes);tx.setAttribute("fill","#9a9a9a");return{r,d,tx}});
+SRC.forEach(([id,t,s],i)=>{const y=48+i*76;box(id,32,y,300,56,t,s);$("circle",{cx:316,cy:y+16,r:4,fill:C[id]},G.boxes)});
+box("ing",392,72,296,312,"ingestion",":8001");
+const STAGES=["parse","extract","resolve","embed"],stageEls=STAGES.map((s,i)=>{const y=180+i*52;
+  const r=$("rect",{x:408,y:y-20,width:264,height:34,rx:7,fill:"#161616"},G.boxes);
+  const d=$("circle",{cx:428,cy:y-3,r:3.5,fill:"#3a3a3a"},G.boxes);
+  const tx=text(444,y+1,s,"row",G.boxes);tx.setAttribute("fill","#9a9a9a");return{r,d,tx}});
 // store cylinder
-const SX=660,STOP=258,SBOT=462,SRX=100,SRY=18;
+const SX=400,STOP=500,SBOT=690,SRX=100,SRY=18,SCY=595;
 const sg=$("g",{},G.boxes);
 $("path",{d:`M${SX-SRX},${STOP} L${SX-SRX},${SBOT} A${SRX},${SRY} 0 0 0 ${SX+SRX},${SBOT} L${SX+SRX},${STOP}`,fill:"url(#cyl)",stroke:"#262626","stroke-width":1.5},sg);
 boxes.store={r:$("ellipse",{cx:SX,cy:STOP,rx:SRX,ry:SRY,fill:"#181818",stroke:"#262626","stroke-width":1.5},sg)};
-text(SX,500,"Graph store","t",sg,"middle");text(SX,518,"JSON · GCS · SurrealDB","s",sg,"middle");
-box("rules",580,112,160,64,"rules",":8002 · edge rules");
-box("api",830,262,150,196,"api",":8000");
-const PORTS=["REST","SSE","/mcp"],portEls=PORTS.map((p,i)=>{const y=336+i*38;
-  const r=$("rect",{x:846,y:y-18,width:118,height:28,rx:7,fill:"#161616"},G.boxes);
-  const tx=text(862,y+1,p,"row",G.boxes);tx.setAttribute("fill","#9a9a9a");return{r,tx}});
-box("admin",1050,104,190,168,"admin-panel","Next.js · cosmos.gl");
-box("agent",1050,306,190,64,"agent","Claude Managed Agents");
-box("voice",1050,418,190,52,"voice","ElevenLabs · Vonage");
-box("email2",1050,490,190,52,"email","AgentMail");
-box("browser",1050,562,190,52,"browser","Browserbase");
-text(SX,652,"agents reach the graph only through /mcp","l",G.boxes,"middle").setAttribute("style","fill:#555;font-size:11px;letter-spacing:.08em");
+text(SX+SRX+18,SCY-4,"Graph store","t",sg);text(SX+SRX+18,SCY+14,"JSON · GCS · SurrealDB","s",sg);
+box("rules",32,470,180,64,"rules",":8002 · edge rules");
+box("api",160,776,400,124,"api",":8000");
+const PORTS=["REST","SSE","/mcp"],portEls=PORTS.map((p,i)=>{const x=176+i*126;
+  const r=$("rect",{x,y:850,width:116,height:32,rx:7,fill:"#161616"},G.boxes);
+  const tx=text(x+16,871,p,"row",G.boxes);tx.setAttribute("fill","#9a9a9a");return{r,tx}});
+box("admin",32,964,320,274,"admin-panel","Next.js · cosmos.gl");
+box("agent",392,964,296,64,"agent","Claude Managed Agents");
+box("voice",392,1046,296,52,"voice","ElevenLabs · Vonage");
+box("email2",392,1116,296,52,"email","AgentMail");
+box("browser",392,1186,296,52,"browser","Browserbase");
 
 // edges
 const P={};
-function edge(id,d,label,lx,ly){P[id]=$("path",{d,fill:"none",stroke:"#2a2a2a","stroke-width":1.5,"marker-end":"url(#arr)"},G.edges);if(label)text(lx,ly,label,"l",G.edges)}
-SRC.forEach(([id],i)=>{const y=196+i*76;edge("s"+i,`M260,${y} C290,${y} 280,360 314,360`)});
-edge("ing_store",`M512,360 L558,360`);
-edge("rules_store",`M660,176 L660,238`,"RECOMPUTE · LAYOUT",672,212);
-edge("store_api",`M760,346 L828,346`,"READ",772,336);
-edge("api_store",`M830,376 L762,376`,"WRITE",772,396);
-edge("api_admin",`M980,336 C1016,336 1012,186 1048,186`);
-edge("admin_api",`M1050,214 C1022,214 1010,322 982,322`);
-text(1040,170,"REST · SSE","l",G.edges,"end");
-edge("agent_api",`M1050,330 C1018,330 1014,410 982,410`);
-edge("api_agent",`M980,420 C1022,420 1018,348 1048,348`);
-text(1004,384,"MCP","l",G.edges);
-edge("voice_api",`M1050,444 C1010,444 1012,432 982,432`);
-edge("email_api",`M1050,516 C1006,516 1006,440 982,440`);
-edge("browser_api",`M1050,588 C1000,588 1002,448 982,448`);
+function edge(id,d,label,lx,ly,anchor){P[id]=$("path",{d,fill:"none",stroke:"#2a2a2a","stroke-width":1.5,"marker-end":"url(#arr)"},G.edges);if(label)text(lx,ly,label,"l",G.edges,anchor)}
+SRC.forEach(([id],i)=>{const y=76+i*76;edge("s"+i,`M332,${y} C364,${y} 358,228 390,228`)});
+edge("ing_store",`M540,384 C540,440 400,428 400,480`);
+edge("rules_store",`M212,502 C262,502 262,590 298,590`,"RECOMPUTE · LAYOUT",32,560);
+edge("store_api",`M376,710 L376,774`,"READ",366,748,"end");
+edge("api_store",`M424,776 L424,712`,"WRITE",434,748);
+edge("api_admin",`M216,902 L216,962`);
+edge("admin_api",`M276,962 L276,902`);
+text(206,936,"REST · SSE","l",G.edges,"end");
+edge("agent_api",`M530,964 L530,902`);
+edge("api_agent",`M490,900 L490,962`);
+text(540,936,"MCP","l",G.edges);
+[["voice_api",1072,378],["email_api",1142,370],["browser_api",1212,362]].forEach(([id,y,x])=>edge(id,`M392,${y} C${x},${y} ${x},${y-16} ${x},${y-36} L${x},902`));
 
 // constellation (store) + mirrored mini graph (admin)
 let seed=7;const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296};
-const N=26,nodes=[];while(nodes.length<N){const a=rnd()*Math.PI*2,r=Math.sqrt(rnd());const x=SX+Math.cos(a)*r*78,y=362+Math.sin(a)*r*60;
+const N=26,nodes=[];while(nodes.length<N){const a=rnd()*Math.PI*2,r=Math.sqrt(rnd());const x=SX+Math.cos(a)*r*78,y=SCY+Math.sin(a)*r*62;
   if(nodes.every(n=>Math.hypot(n.x-x,n.y-y)>17))nodes.push({x,y,c:Object.values(C)[nodes.length%5]})}
 const links=[];nodes.forEach((n,i)=>{nodes.map((m,j)=>[Math.hypot(n.x-m.x,n.y-m.y),j]).sort((a,b)=>a[0]-b[0]).slice(1,3).forEach(([,j])=>{if(!links.some(l=>l[0]===j&&l[1]===i))links.push([i,j])})});
-const mini=n=>({x:1145+(n.x-SX)*0.95,y:206+(n.y-362)*0.7});
+const mini=n=>({x:192+(n.x-SX)*1.25,y:1112+(n.y-SCY)*1.25});
 function graphEls(map,scale){const lg=$("g",{},G.boxes),ng=$("g",{},G.boxes);
   const ls=links.map(([a,b])=>$("line",{stroke:"#2c2c2c","stroke-width":1},lg));
   const ns=nodes.map(n=>({halo:$("circle",{r:9*scale,fill:n.c,opacity:0,filter:"url(#soft)"},ng),dot:$("circle",{r:3.2*scale,fill:"#4a4a4a"},ng)}));
@@ -149,7 +141,7 @@ window.render=function(t){
       e.dot.setAttribute("r",(3.2+(h?h[0]*2.2:0))*G2.scale);e.halo.setAttribute("opacity",h?h[0]*.9:0)})}
   // ripple ring
   G.fx.innerHTML="";
-  if(ripple>=0){$("ellipse",{cx:SX,cy:362,rx:40+ripple*90,ry:30+ripple*70,fill:"none",stroke:C.rules,"stroke-width":2,opacity:(1-ripple)*.7},G.fx)}
+  if(ripple>=0){$("ellipse",{cx:SX,cy:SCY,rx:40+ripple*90,ry:30+ripple*70,fill:"none",stroke:C.rules,"stroke-width":2,opacity:(1-ripple)*.7},G.fx)}
   // packets
   while(packetEls.length<moves.length){const g=$("g",{},G.packets);packetEls.push({g,trail:[0,1,2,3,4].map(i=>$("circle",{r:4-i*.6,fill:"#fff"},g)),head:$("circle",{r:5,fill:"#fff",filter:"url(#glow)"},g)})}
   packetEls.forEach((p,i)=>{const m=moves[i];p.g.setAttribute("display",m?"":"none");if(!m)return;
